@@ -32,6 +32,6 @@ SDK high-level sendMessage의 reconnect/retry, SDK auth CLI의 로컬 자격증�
 
 ## 보안 검증 한계
 
-실행한 `npm audit --omit=optional`은 영향받는 의존성 항목 7개(high 6, moderate 1)를 보고했습니다. 원 패키지의 여러 메신저 경로에서 파생됩니다. 실제 카카오 경로의 도달성/악용 가능성은 이 수치만으로 판단할 수 없습니다. SDK를 pin한 것은 재현성·API 계약을 위한 것이며 보안 보증이 아닙니다. 자동 강제 수정/다운그레이드를 하지 않았습니다.
+실행한 `npm audit --omit=optional`은 영향받는 의존성 항목 6개(high 5, moderate 1)를 보고했습니다. 원 패키지의 여러 메신저 경로에서 파생됩니다. 실제 카카오 경로의 도달성/악용 가능성은 이 수치만으로 판단할 수 없습니다. SDK를 pin한 것은 재현성·API 계약을 위한 것이며 보안 보증이 아닙니다. 자동 강제 수정/다운그레이드를 하지 않았습니다.
 
 `npm ci --ignore-scripts --omit=optional`은 의존성 설치 후크를 비활성화할 뿐 의존성 자체 실행의 위험을 제거하지 않습니다. 실제 계정/프로덕션 서버 검증 없이 로컬 candidate로만 제공합니다.

@@ -150,7 +150,7 @@ npm audit --omit=optional
 
 테스트는 실제 고정 SDK import, 실제 SDK `loginFlow`의 mock HTTP 등록 순서, 실제 SDK listener의 mock push → 로컬 HTTP AI → mock 단일 WRITE/readback, 설정/권한/중복/발신자/종료/CLI 차단을 실행합니다. 카카오 서버로 실제 로그인하거나 메시지를 보내지 않습니다. 실제 카카오 계정 연동과 여러 OS/AI provider 실서비스 호환성은 미검증입니다. 서비스별 모델 파라미터 차이 때문에 `max_tokens` 등을 받지 않는 endpoint는 지원하지 않을 수 있습니다. Responses API/stream/tool-call 출력은 지원하지 않습니다.
 
-고정 의존성 audit에서 영향받는 항목 7개(high 6, moderate 1)가 확인되었습니다. `agent-messenger`, `node-forge`, `node-jose`, `node-kms`, `thrift`, `uuid`, `webex-message-handler` 경로입니다. 여러 메신저를 담은 upstream 패키지 전체의 보고이며 이 브리지에서의 실제 악용 가능성은 별도 검토 대상입니다. 취약점 없음/운영 보안 승인이라고 주장하지 않습니다. `npm audit fix --force`가 오래된 SDK로 변경할 수 있으므로 실행하지 마세요. SDK 변경은 API/인증/안전 회귀 검증과 함께 별도 작업으로 진행해야 합니다.
+고정 의존성 audit에서 영향받는 항목 6개(high 5, moderate 1)가 확인되었습니다. `agent-messenger`, `node-forge`, `node-jose`, `node-kms`, `uuid`, `webex-message-handler` 경로입니다. 여러 메신저를 담은 upstream 패키지 전체의 보고이며 이 브리지에서의 실제 악용 가능성은 별도 검토 대상입니다. 취약점 없음/운영 보안 승인이라고 주장하지 않습니다. `npm audit fix --force`가 오래된 SDK로 변경할 수 있으므로 실행하지 마세요. SDK 변경은 API/인증/안전 회귀 검증과 함께 별도 작업으로 진행해야 합니다.
 
 ## 라이선스와 출처
 
