@@ -1,0 +1,12 @@
+stages:
+  - test
+
+offline_tests:
+  stage: test
+  image: node:${NODE_VERSION}-bookworm-slim
+  parallel:
+    matrix:
+      - NODE_VERSION: ['22', '24']
+  script:
+    - npm ci --ignore-scripts --omit=optional --no-audit --no-fund
+    - npm test

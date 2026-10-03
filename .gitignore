@@ -1,0 +1,14 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.state/
+*.log
+*.tgz
+coverage/
+artifacts/
+*credentials*.json
+*session*.json
+*sync-state*.json
+**/ledger.json
+**/lock.json

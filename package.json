@@ -1,0 +1,19 @@
+{
+  "name": "kakao-ai-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "Private candidate: isolated Kakao transport to a configurable OpenAI-compatible endpoint",
+  "type": "module",
+  "engines": {"node": ">=22.13.0 <25"},
+  "scripts": {
+    "setup": "node bin/bridge.mjs setup",
+    "login": "node bin/bridge.mjs login",
+    "rooms": "node bin/bridge.mjs rooms",
+    "start": "node bin/bridge.mjs start",
+    "doctor": "node bin/bridge.mjs doctor",
+    "test": "node --test test/*.test.mjs",
+    "check": "node scripts/check.mjs"
+  },
+  "dependencies": {"agent-messenger": "2.38.1", "bson": "6.10.4"}
+}
