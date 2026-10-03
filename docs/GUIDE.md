@@ -11,12 +11,12 @@
 포함:
 - 이메일·비밀번호를 직접 입력하는 카카오 보조기기 등록/로그인
 - 방 ID 허용목록, `!ai` 호출, 단일 텍스트 질의/답변
-- OpenAI 호환 `POST /v1/chat/completions`와 본인이 운영하는 OpenClaw 호환 endpoint
+- OpenAI 호환 `POST /v1/chat/completions`와 명시적 OpenClaw 게이트웨이 모드(OAuth 기반 AI 포함)
 - 비공개 로컬 세션 저장, 중복 억제, 제한된 큐/요청량, 종료 시 연결 닫기
 - 네트워크 연결 없는 설정 진단 및 mock 기반 회귀 테스트
 
 미포함:
-- 조직별 팀 명령, 포장계획 수집, Zoom/OAuth, 일정, 뉴스 수집·검색, 자동 공지, 예약 발송
+- 조직별 팀 명령, 포장계획 수집, Zoom 등 업무서비스 OAuth, 일정, 뉴스 수집·검색, 자동 공지, 예약 발송
 - 장기 기억, 방 사이 기록 공유, 첨부파일, 음성/이미지 처리, 파일/명령 실행 도구
 - 이전 메시지 탐색, 오프라인 동안의 메시지 복구, 자동 재접속·자동 발송 재시도
 - Docker/서버 자동 배포, 운영 계정 로그인 검증
@@ -42,31 +42,74 @@ npm run setup
 
 ### 1. 본인의 AI 설정
 
-비공개 편집기로 `.env`를 열어 다음을 입력합니다.
+비공개 편집기로 `.env`를 열고 A 또는 B를 선택합니다. 카카오 이메일·비밀번호는 넣지 않습니다. 셸 환경변수가 `.env`보다 우선하며, 식별자의 공백·대소문자를 자동 보정하지 않습니다.
+
+#### A. OpenAI 호환 API
 
 ```dotenv
+AI_PROVIDER=openai-compatible
 AI_BASE_URL=https://api.openai.com/v1
 AI_API_KEY=
 AI_MODEL=
-KAKAO_ALLOWED_ROOMS=
-KAKAO_TRIGGER_PREFIX=!ai
 ```
 
-`AI_API_KEY`와 `AI_MODEL`은 본인이 사용하는 서비스에서 발급/확인한 값으로 채우세요. 카카오 이메일·비밀번호는 `.env`에 넣지 않습니다. 환경변수 값이 `.env`보다 우선하므로 오래된 셸 환경변수도 확인하세요. 코드/문자열 끝 공백·개행으로 식별자를 보정하지 않습니다. 쉼표 목록에도 공백을 넣지 마세요.
+서비스에서 발급/확인한 API 키와 모델 이름을 입력하세요. `AI_PROVIDER`를 생략한 기존 설정도 이 모드입니다. `AI_BASE_URL`은 `/v1` 등 API 기본 경로이며 코드가 `/chat/completions`를 붙입니다. 원격 서비스는 HTTPS만 허용하고 localhost/127.0.0.1/[::1]의 HTTP는 키 없이 사용할 수 있습니다. URL 안 계정정보·쿼리·fragment는 거부하고 리디렉션은 따르지 않습니다.
 
-`AI_BASE_URL`은 `/v1` 등 서비스의 API 기본 경로입니다. 코드가 `/chat/completions`를 붙입니다. 이미 완성된 `/chat/completions` URL을 넣으면 안 됩니다. URL 안 계정정보·쿼리·fragment는 거부합니다. 원격 서비스에는 HTTPS만 허용하고 리디렉션은 따르지 않습니다. localhost/127.0.0.1/[::1]에만 평문 HTTP를 허용합니다.
+#### B. OpenClaw + OAuth
 
-본인이 운영하는 OpenClaw 호환 endpoint 예:
+```text
+브리지 ──게이트웨이 토큰──▶ 전용 OpenClaw 에이전트 ──제공자 OAuth──▶ AI
+```
+
+브리지는 OpenClaw의 Chat Completions API를 호출합니다. 브라우저 로그인·제공자 자격증명 보관·갱신은 OpenClaw가 맡으며, 브리지는 OAuth 저장소를 읽거나 복사하지 않습니다. 게이트웨이에 API 키로 인증한 모델을 설정해도 같은 경로를 사용할 수 있습니다. `AI_PROVIDER=openclaw` 자체가 OAuth를 강제하거나 모든 제공자의 구독을 지원한다는 뜻은 아닙니다.
+
+**OpenClaw 쪽 준비** — 다음은 브리지가 아닌, 별도로 설치한 OpenClaw에서 수행합니다.
+
+1. 개인 운영 게이트웨이와 분리된 **카카오 전용 인스턴스**를 준비하세요. 별도 OS 사용자와 전용 상태·작업공간을 권장합니다. 개인 파일·기억·운영 서비스 인증정보를 공유하지 말고, 해당 설치/프로필이 선택됐는지 확인한 후 진행하세요.
+2. 전용 에이전트를 만들고 **같은 에이전트**에 로그인합니다. 아래는 현재 공식 문서의 ChatGPT/Codex OAuth 예시입니다. 이미 만든 전용 에이전트가 있으면 실제 ID를 두 명령에 사용하세요. 인증자료 복사를 선택하거나 기존 저장소를 수동 복사하지 마세요.
+
+   ```sh
+   openclaw agents add kakao-bridge
+   openclaw models auth login --provider openai --agent kakao-bridge
+   openclaw models status --agent kakao-bridge
+   ```
+
+   OpenClaw가 안내하는 브라우저에서 직접 로그인합니다. 해당 에이전트의 모델은 OpenClaw 설정 UI에서 선택하세요. 모델 선택·지원 인증 방식은 설치 버전과 제공자에 따라 다릅니다. Claude CLI 재사용 등 다른 경로는 [공식 OAuth 안내](https://docs.openclaw.ai/concepts/oauth)를 따르세요. OAuth 만료·갱신 실패는 OpenClaw 쪽에서 재인증하며, ChatGPT 등 구독과 API 과금은 서로 다를 수 있습니다.
+3. 전용 게이트웨이에서 token 인증(`gateway.auth.mode="token"`)을 설정하고 접속 토큰을 준비하세요. **Chat Completions는 기본 비활성**이므로 기존 설정에 다음을 병합합니다. 전체 설정을 이 조각으로 덮어쓰지 마세요. 적용·재시작은 해당 OpenClaw 버전의 안내를 따릅니다.
+
+   ```json5
+   {
+     gateway: {
+       http: {
+         endpoints: {
+           chatCompletions: { enabled: true }
+         }
+       }
+     }
+   }
+   ```
+
+4. 게이트웨이를 loopback 또는 비공개 네트워크에만 노출하고, 에이전트의 파일·셸·외부 서비스·다른 에이전트 접근 권한을 서버에서 제한하세요. 최소 프로필 이름이나 프롬프트만 믿지 말고 실제 적용 권한을 확인해야 합니다. **게이트웨이 토큰은 인스턴스 운영자 권한**이며 `OPENCLAW_AGENT_ID`는 라우팅 선택이지 토큰의 권한 범위가 아닙니다. 공용 인터넷에 공개하거나 개인 관리자 인스턴스에 연결하지 마세요.
+
+**브리지 `.env` 설정:**
 
 ```dotenv
-AI_BASE_URL=http://127.0.0.1:18789/v1
-AI_API_KEY=
-AI_MODEL=openclaw/default
+AI_PROVIDER=openclaw
+OPENCLAW_BASE_URL=http://127.0.0.1:18789/v1
+OPENCLAW_GATEWAY_TOKEN=
+OPENCLAW_AGENT_ID=kakao-bridge
 ```
 
-API key에는 본인의 gateway token을 넣습니다. 서버 쪽 Chat Completions endpoint가 활성화되어 있어야 하며 여기서는 서버 설정을 변경하지 않습니다. 이것은 호환 설정 예시이지 특정 서버에 실제 접속했다는 뜻이 아닙니다.
+- `OPENCLAW_BASE_URL`: `/v1`로 끝나는 기본 주소입니다. 코드가 `/chat/completions`를 붙입니다. 끝의 `/`는 허용합니다. 프록시 접두 경로도 `/bridge/v1`처럼 지정할 수 있습니다. 완성된 endpoint·인증정보·쿼리·fragment·공백·경로 보정 입력은 거부합니다. 원격은 HTTPS만, HTTP는 localhost/127.0.0.1/[::1]만 허용합니다. HTTPS라고 비공개 서버임이 보장되는 것은 아니므로 네트워크 격리를 별도로 확인하세요.
+- `OPENCLAW_GATEWAY_TOKEN`: 전용 게이트웨이의 **접속 토큰**을 입력합니다. 제공자 API 키나 OAuth access/refresh token이 아니며 `Bearer ` 접두사도 넣지 않습니다. 비어 있으면 loopback에서도 차단합니다. password/trusted-proxy/무인증 게이트웨이 모드는 이 전용 어댑터의 지원 대상이 아닙니다.
+- `OPENCLAW_AGENT_ID`: 실제 등록한 전용 ID를 정확히 입력합니다. 이 브리지는 영문 소문자로 시작하는 1~64자의 소문자·숫자·`_`·`-`만 허용하고, 기본 에이전트로 바뀔 수 있는 `default` 별칭은 거부합니다. 대소문자나 오타를 보정하지 않습니다. 존재 여부·최소권한 여부는 서버에서 확인해야 합니다.
+- 이 모드의 `AI_BASE_URL`·`AI_API_KEY`·`AI_MODEL`은 무시합니다. `AI_TIMEOUT_MS`·`AI_MAX_OUTPUT_TOKENS` 등 공통 제한은 계속 적용됩니다.
 
-중요: 브리지에는 로컬 파일/명령 실행 기능이 없지만 연결한 AI 서버에 이미 활성화된 도구까지 막을 수는 없습니다. 시스템 프롬프트는 권한 통제가 아닙니다. 개인/관리자/root 권한 게이트웨이 대신 별도의 최소권한 agent/model 경로를 사용하고, 서버에서 파일·셸·외부 서비스 도구 권한을 제한하세요. 서버의 대화 보관·세션 매핑 정책도 확인하세요. `user` 값은 요청마다 새 난수로 생성하지만 서버가 이를 존중한다고 보장하지 않습니다.
+요청은 `Authorization: Bearer <게이트웨이 토큰>`, `model: "openclaw/<에이전트 ID>"`, `stream: false`를 사용합니다. 제공자 모델을 강제로 바꾸는 `x-openclaw-model`이나 세션·권한 override 헤더는 보내지 않습니다. `user`는 매 요청 새 난수라 카카오 방/사용자 ID를 노출하거나 대화를 의도적으로 이어 붙이지 않습니다. 다만 서버의 작업공간·기억·보관 정책을 끄는 기능은 아닙니다.
+
+OpenClaw에는 `max_completion_tokens`, 일반 API에는 기존 `max_tokens`로 예산을 전달합니다. 일부 OAuth 백엔드는 토큰 예산을 엄격하게 적용하지 않을 수 있습니다. 응답에 초과 사용량이 보고되면 거부하고 출력 길이도 제한하지만, 이미 사용된 토큰·비용이나 서버 도구 실행을 취소하지는 못합니다. tool-call 응답은 실행하지 않고 거부합니다. 서버 내부 도구 실행은 이 제한과 별개이며 브리지의 프롬프트는 권한 통제가 아닙니다.
+
+공식 문서: [Gateway HTTP API](https://docs.openclaw.ai/gateway/openai-http-api) · [OAuth](https://docs.openclaw.ai/concepts/oauth) · [에이전트](https://docs.openclaw.ai/cli/agents) · [모델·인증 CLI](https://docs.openclaw.ai/cli/models). 명령이 설치 버전과 다르면 해당 버전 문서를 먼저 확인하세요.
 
 ### 2. 본인 카카오 로그인
 
@@ -108,7 +151,7 @@ npm run doctor
 npm start
 ```
 
-`doctor`는 로컬 설정·세션 형식·권한·SDK 고정 버전·잠금 상태를 검사합니다. 네트워크에 접속하지 않으며 AI 자격증명이나 실제 Kakao 로그인 성공을 검증하지 않습니다. 기존 상태의 전용 SDK 하위 폴더가 없으면 생성할 수 있습니다. 설정이 비었을 때 exit 1은 정상적인 안전 차단입니다.
+`doctor`는 로컬 설정·세션 형식·권한·SDK 고정 버전·잠금 상태를 검사합니다. `aiProvider`, `aiAuth`와 OpenClaw의 경우 `openclawAgentId`를 표시하며 주소·토큰은 출력하지 않습니다. 네트워크에 접속하지 않으므로 게이트웨이 endpoint 활성화·에이전트 존재/권한·OAuth 상태·실제 Kakao 로그인 성공은 검증하지 않습니다. 기존 상태의 전용 SDK 하위 폴더가 없으면 생성할 수 있습니다. 설정이 비었을 때 exit 1은 정상적인 안전 차단입니다.
 
 `ready` 이벤트가 나오면 허용 방에서 다른 구성원 계정으로 `!ai 안녕하세요`처럼 호출합니다. 명령 접두사 바로 뒤 공백이 필요합니다. 봇 자신의 메시지는 처리하지 않습니다. 중단은 Ctrl+C입니다. 인증서 우회/TLS 비활성화는 지원하지 않습니다.
 
@@ -129,7 +172,12 @@ npm start
 ## 문제 해결
 
 - `room_allowlist_empty`: `.env`의 허용 방 목록을 직접 지정합니다. 우회 기본값은 없습니다.
-- `AI_MODEL_required` / `AI_API_KEY_required`: 서비스가 제공한 정확한 모델/키를 입력합니다. loopback HTTP에서는 key를 생략할 수 있습니다.
+- `AI_MODEL_required` / `AI_API_KEY_required`: 일반 API 모드에서 서비스가 제공한 정확한 모델/키를 입력합니다. 이 모드의 loopback HTTP에서는 key를 생략할 수 있습니다.
+- `invalid_AI_PROVIDER`: `openai-compatible` 또는 `openclaw`를 정확히 입력합니다.
+- `OPENCLAW_AGENT_ID_required` / `invalid_OPENCLAW_AGENT_ID`: 전용 에이전트 ID를 정확히 입력하세요. `default`, 대문자, 공백, 경로/별칭은 거부합니다.
+- `OPENCLAW_GATEWAY_TOKEN_required` / `invalid_OPENCLAW_GATEWAY_TOKEN`: 전용 게이트웨이 토큰을 입력하세요. API 키로 대체하거나 `Bearer ` 접두사를 붙이지 마세요.
+- `invalid_OPENCLAW_BASE_URL` / `insecure_OPENCLAW_BASE_URL`: `/v1`로 끝나는 주소와 전송 보안 조건을 확인하세요.
+- `ai_http_failed`: 원문 응답은 출력하지 않습니다. OpenClaw 쪽에서 token 인증, Chat Completions 활성화, 에이전트·모델 선택, 해당 에이전트의 OAuth 상태를 확인하세요. 권한을 넓히거나 무인증으로 우회하지 마세요.
 - `interactive_terminal_required`: 파이프/자동화 세션이 아니라 본인 터미널에서 login/rooms를 실행합니다.
 - `tablet_slot_occupied_no_force`: 기존 태블릿 기기를 본인 앱에서 확인하세요. 자동 세션 탈취/강제 해제는 하지 않습니다.
 - `kakao_login_failed` / `operation_failed`: 인증 또는 SDK/네트워크 오류입니다. 원래 예외에 민감한 값이 있을 수 있어 그대로 출력하지 않습니다. 인터넷/시간 설정/본인 계정 상태를 확인하세요. SDK debug 출력은 켜지 마세요.
@@ -148,7 +196,7 @@ npm test
 npm audit --audit-level=low
 ```
 
-테스트는 실제 고정 SDK import, 실제 SDK `loginFlow`의 mock HTTP 등록 순서, 실제 SDK listener의 mock push → 로컬 HTTP AI → mock 단일 WRITE/readback, 설정/권한/중복/발신자/종료/CLI 차단을 실행합니다. 카카오 서버로 실제 로그인하거나 메시지를 보내지 않습니다. 실제 카카오 계정 연동과 여러 OS/AI provider 실서비스 호환성은 미검증입니다. 서비스별 모델 파라미터 차이 때문에 `max_tokens` 등을 받지 않는 endpoint는 지원하지 않을 수 있습니다. Responses API/stream/tool-call 출력은 지원하지 않습니다.
+테스트는 실제 고정 SDK import, 실제 SDK `loginFlow`의 mock HTTP 등록 순서, 두 AI 모드 각각의 실제 SDK listener mock push → 로컬 HTTP → mock 단일 WRITE/readback, 설정/권한/중복/발신자/종료/CLI 차단을 실행합니다. OpenClaw 요청의 경로·Bearer·에이전트·예산·세션 분리와 잘못된 입력·리디렉션·HTTP 오류·tool-call·응답 크기·타임아웃 거부도 검사합니다. 카카오 서버로 실제 로그인하거나 메시지를 보내지 않습니다. 실제 카카오 계정 연동, 실서비스 OpenClaw/OAuth 로그인·갱신, 여러 OS/AI 제공자 호환성은 미검증입니다. 서비스별 파라미터 차이 때문에 `max_tokens` 등을 받지 않는 일반 API endpoint는 지원하지 않을 수 있습니다. Responses API/stream/tool-call 출력은 지원하지 않습니다.
 
 카카오 전용 부분집합으로 전환해 사용하지 않는 메신저와 의존성 자체를 제거했습니다. 실행 패키지는 `bson@6.10.4`, `zod@4.6.5`이며 개발용 parser까지 포함한 전체 audit에서 보고 항목 0개를 확인했습니다. 원본 22개 모듈·출처 고지·정적/동적 import를 대조하며 잠금파일·스캐너 검사를 유지합니다. 이는 알려진 의존성 경고 기준이며 취약점 부재/운영 보안 승인을 뜻하지 않습니다. `npm audit fix --force`는 실행하지 마세요. SDK 변경은 [재현·출처 검사](SDK-SUBSET.md)와 API/인증/안전 회귀 검증을 함께 진행해야 합니다.
 

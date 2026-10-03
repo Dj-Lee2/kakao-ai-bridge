@@ -39,7 +39,9 @@ async function main(){
     check('private_state',()=>{if(fs.existsSync(store.root))store.init();else fail('state_not_initialized');});
     check('pinned_sdk',assertSdkPackage);
     check('not_locked',()=>{if(fs.existsSync(path.join(store.root,'lock.json')))fail('state_locked');});
-    process.stdout.write(JSON.stringify({offline:true,networkChecked:false,roomsConfigured:cfg.rooms.length,checks},null,2)+'\n');
+    process.stdout.write(JSON.stringify({offline:true,networkChecked:false,roomsConfigured:cfg.rooms.length,
+      aiProvider:cfg.provider,aiAuth:cfg.provider==='openclaw'?'gateway-token':(cfg.key?'api-key':'none'),
+      ...(cfg.provider==='openclaw'?{openclawAgentId:cfg.agentId}:{}),checks},null,2)+'\n');
     return checks.every(x=>x.ok)?0:1;
   }
   // Preflight must fail before SDK import, credentials or network when all rooms blocked.

@@ -11,19 +11,40 @@ function integer(env, key, fallback, min, max) {
   if (typeof raw !== 'string' || !raw || /[^0-9]/.test(raw)) fail('invalid_' + key);
   const n = Number(raw); if (!Number.isSafeInteger(n) || n < min || n > max) fail('invalid_' + key); return n;
 }
+function endpoint(base, name, openclaw = false) {
+  // The explicit Gateway path is deliberately stricter: reject repaired input.
+  if (openclaw && (typeof base !== 'string' || /[\s\x00-\x1f\x7f\\]/u.test(base) || /\/\.{1,2}(?:\/|$)/.test(base))) fail('invalid_' + name);
+  let url; try { url = new URL(base); } catch { fail('invalid_' + name); }
+  if (url.username || url.password || url.search || url.hash || !['http:', 'https:'].includes(url.protocol)) fail('invalid_' + name);
+  if (url.protocol === 'http:' && !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)) fail('insecure_' + name);
+  if (openclaw && (!url.pathname.replace(/\/$/, '').endsWith('/v1') || url.pathname.includes('%'))) fail('invalid_' + name);
+  return url.href.replace(/\/$/, '') + '/chat/completions';
+}
 export function configFrom(env, cwd = process.cwd()) {
-  let url; try { url = new URL(env.AI_BASE_URL || 'https://api.openai.com/v1'); } catch { fail('invalid_AI_BASE_URL'); }
-  if (url.username || url.password || url.search || url.hash || !['http:', 'https:'].includes(url.protocol)) fail('invalid_AI_BASE_URL');
-  if (url.protocol === 'http:' && !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)) fail('insecure_AI_BASE_URL');
+  const provider = env.AI_PROVIDER ?? 'openai-compatible';
+  if (!['openai-compatible', 'openclaw'].includes(provider)) fail('invalid_AI_PROVIDER');
+  let target, model = '', key = '', agentId = '', gatewayToken = '';
+  if (provider === 'openclaw') {
+    target = endpoint(env.OPENCLAW_BASE_URL ?? 'http://127.0.0.1:18789/v1', 'OPENCLAW_BASE_URL', true);
+    agentId = env.OPENCLAW_AGENT_ID ?? '';
+    // 'default' is an alias, not a stable dedicated agent. Never trim/lowercase IDs.
+    if (typeof agentId !== 'string' || (agentId && (!/^[a-z][a-z0-9_-]{0,63}$/.test(agentId) || /[^a-z0-9_-]/.test(agentId) || agentId === 'default'))) fail('invalid_OPENCLAW_AGENT_ID');
+    gatewayToken = env.OPENCLAW_GATEWAY_TOKEN ?? '';
+    if (typeof gatewayToken !== 'string' || gatewayToken.length > 4096 || /[^\x21-\x7e]/.test(gatewayToken)) fail('invalid_OPENCLAW_GATEWAY_TOKEN');
+    model = agentId ? 'openclaw/' + agentId : '';
+    // AI_* credentials/models do not select or authenticate a Gateway request.
+  } else {
+    target = endpoint(env.AI_BASE_URL || 'https://api.openai.com/v1', 'AI_BASE_URL');
+    model = env.AI_MODEL || ''; key = env.AI_API_KEY || '';
+    if (model.length > 200 || /[\r\n\x00]/u.test(model) || /[\r\n\x00]/u.test(key)) fail('invalid_ai_credentials');
+  }
   const raw = env.KAKAO_ALLOWED_ROOMS || '';
   const rooms = raw === '' ? [] : raw.split(',');
   if (rooms.length > 10 || rooms.some(r => !validId(r)) || new Set(rooms).size !== rooms.length) fail('invalid_KAKAO_ALLOWED_ROOMS');
   const prefix = env.KAKAO_TRIGGER_PREFIX ?? '!ai';
   if (!/^\S{1,32}$/u.test(prefix) || /[\s\x00-\x1f\x7f]/u.test(prefix)) fail('invalid_KAKAO_TRIGGER_PREFIX');
-  const model = env.AI_MODEL || ''; const key = env.AI_API_KEY || '';
-  if (model.length > 200 || /[\r\n\x00]/u.test(model) || /[\r\n\x00]/u.test(key)) fail('invalid_ai_credentials');
   return Object.freeze({
-    endpoint: url.href.replace(/\/$/, '') + '/chat/completions', model, key, rooms: Object.freeze(rooms), prefix,
+    provider, endpoint: target, model, key, agentId, gatewayToken, rooms: Object.freeze(rooms), prefix,
     stateDir: path.resolve(cwd, env.BRIDGE_STATE_DIR || '.state'),
     aiTimeout: integer(env, 'AI_TIMEOUT_MS', 60000, 100, 120000),
     maxTokens: integer(env, 'AI_MAX_OUTPUT_TOKENS', 800, 16, 4096),
@@ -41,8 +62,16 @@ export function loadConfig(cwd = process.cwd(), external = process.env) {
   }
   return configFrom({...env, ...external}, cwd);
 }
+export function requireAi(cfg) {
+  if (cfg.provider === 'openclaw') {
+    if (!cfg.agentId) fail('OPENCLAW_AGENT_ID_required');
+    if (!cfg.gatewayToken) fail('OPENCLAW_GATEWAY_TOKEN_required');
+  } else {
+    if (!cfg.model) fail('AI_MODEL_required');
+    if (new URL(cfg.endpoint).protocol === 'https:' && !cfg.key) fail('AI_API_KEY_required');
+  }
+}
 export function requireRunnable(cfg) {
   if (!cfg.rooms.length) fail('room_allowlist_empty');
-  if (!cfg.model) fail('AI_MODEL_required');
-  if (new URL(cfg.endpoint).protocol === 'https:' && !cfg.key) fail('AI_API_KEY_required');
+  requireAi(cfg);
 }

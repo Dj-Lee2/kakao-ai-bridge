@@ -33,14 +33,19 @@ async function fixture(t,extra={}){
  const bridge=new Bridge({cfg,store,client,listener,Long:{fromString:s=>s},selfId:'11',now:()=>clock,ai:async()=> '답변',...extra});
  t.after(()=>bridge.stop());await bridge.start();return {store,client,listener,cfg,bridge};
 }
-test('real listener + local HTTP: whitelist, durable dedupe, one verified WRITE',async t=>{
+for (const provider of ['openai-compatible','openclaw']) test(`real listener + local HTTP (${provider}): whitelist, durable dedupe, one verified WRITE`,async t=>{
  const store=storeFor(t);const sdk=await loadSdk(store);let calls=0;
  const server=http.createServer((req,res)=>{let body='';req.on('data',x=>body+=x);req.on('end',()=>{
    calls++;const parsed=JSON.parse(body);assert.equal(parsed.messages[1].content,'hello');
+   assert.equal(req.url,'/v1/chat/completions');
+   assert.equal(parsed.model,provider==='openclaw'?'openclaw/kakao-bridge':'mock');
+   if(provider==='openclaw')assert.equal(req.headers.authorization,'Bearer fixture-gateway');
    assert.equal(store.read('ledger.json').rooms['101'].cursor,'1001');res.end(JSON.stringify({choices:[{message:{content:'테스트 답변'}}]}));
  });});
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(()=>{server.closeAllConnections();server.close();});
- const cfg=configFrom({AI_BASE_URL:`http://127.0.0.1:${server.address().port}/v1`,AI_MODEL:'mock',KAKAO_ALLOWED_ROOMS:'101'});
+ const base=`http://127.0.0.1:${server.address().port}/v1`;
+ const cfg=configFrom({AI_PROVIDER:provider,AI_BASE_URL:base,AI_MODEL:'mock',KAKAO_ALLOWED_ROOMS:'101',
+   OPENCLAW_BASE_URL:base,OPENCLAW_GATEWAY_TOKEN:'fixture-gateway',OPENCLAW_AGENT_ID:'kakao-bridge'});
  const client=new FakeClient(store);const listener=new sdk.KakaoTalkListener(client);
  const bridge=new Bridge({cfg,store,client,listener,Long:sdk.Long,selfId:'11',now:()=>clock});await bridge.start();t.after(()=>bridge.stop());
  const push=(chat,author,log)=>client.push({method:'MSG',body:{chatId:sdk.Long.fromString(chat),chatLog:{authorId:author,logId:sdk.Long.fromString(log),type:1,message:'!ai hello',sendAt:clock/1000}}});
