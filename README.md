@@ -12,7 +12,7 @@
 
 > ℹ️ **개인 학습·실험용 비공식 연결 도구**입니다. 카카오 공식 서비스나 승인된 봇이 아닙니다. 계정 제한·기기 세션 충돌 위험이 있어, 중요한 개인 계정 대신 본인 소유의 별도 테스트 계정을 권장합니다.
 >
-> ⚠️ **사용 전 확인:** 고정 의존성에서 보안 경고 6개 항목(높음 5·보통 1)이 남아 있습니다. 자동 테스트는 통과했지만 실제 계정 인증·송수신은 검증하지 않았습니다. 운영용 안전성을 보증하지 않습니다. [보안 안내](SECURITY.md)
+> ⚠️ **사용 전 확인:** 카카오 전용 의존성으로 분리해 전체 `npm audit` 보고 항목 0개를 확인했습니다. 이는 조회 시점의 알려진 의존성 경고에 한정됩니다. 실제 계정 인증·송수신은 검증하지 않았으며 운영용 안전성을 보증하지 않습니다. [보안 안내](SECURITY.md)
 
 ---
 
@@ -78,7 +78,7 @@ Windows는 WSL의 Linux 파일시스템을 사용하세요. 네이티브 Windows
 ```sh
 git clone https://github.com/Dj-Lee2/kakao-ai-bridge.git
 cd kakao-ai-bridge
-npm ci --ignore-scripts --omit=optional
+npm ci --ignore-scripts
 npm run setup
 ```
 
@@ -148,6 +148,7 @@ npm start
 - 명시적 방·발신자 검증과 질문량 제한
 - 중복 처리 억제, 단일 발송 시도와 결과 재조회
 - 한글 안내·예시 설정·고정 의존성·GitHub/GitLab 테스트 설정
+- 원본 카카오 SDK 22개 파일만 담은 [카카오 전용 부분집합](docs/SDK-SUBSET.md)과 출처·해시 검증
 
 **아직 포함하지 않아요**
 - Zoom·팀 업무 명령·일정·예약 뉴스·자동 공지
@@ -161,15 +162,17 @@ npm start
 
 ## ✅ 무엇을 확인했나요?
 
-초기 배포 후보를 ZIP에서 새 폴더로 풀고, 분리된 사용자 환경에서 확인했습니다.
+초기 배포에서는 ZIP 압축 해제·분리된 사용자 환경을 검증했고, 이번 카카오 전용 전환에서는 새 설치·원본 대조·회귀 검사를 다시 실행했습니다.
 
-- Node.js 22·24에서 **각각 41개 테스트 통과**
+- Node.js 22·24에서 **각각 49개 테스트 통과**
+- 원본 SDK 22개 JavaScript 파일 바이트 일치·동적 import 포함 검증
+- 개발·선택 의존성을 포함한 전체 `npm audit` 보고 항목 0개
 - 별도 안전성 회귀 검사 8개 통과 — 같은 검사는 저장소 테스트에도 포함
 - 실제 터미널의 숨김 입력·취소 동작 확인
 - 새 설치·기존 설정 보존·미설정 차단·Git 제외 규칙 확인
 - 소스 ZIP 무결성과 개인정보 패턴 검사
 
-테스트는 실제 고정 SDK와 모의 HTTP·전송 계층을 사용합니다. **실제 카카오 로그인·메시지 송수신 테스트가 아닙니다.** 보안 경고가 해결되었다는 뜻도 아닙니다.
+테스트는 실제 고정 SDK와 모의 HTTP·전송 계층을 사용합니다. **실제 카카오 로그인·메시지 송수신 테스트가 아닙니다.** audit 결과가 0개여도 프로토콜 호환성·미발견 취약점 부재·계정 안전성을 보증하지 않습니다.
 
 <details>
 <summary><b>개발자용 테스트 명령과 폴더 구성</b></summary>
@@ -177,13 +180,14 @@ npm start
 ```sh
 npm run check
 npm test
-npm audit --omit=optional
+npm audit --audit-level=low
 ```
 
 ```text
 bin/          실행 명령
 src/          로그인·상태·방 조회·AI·메시지 연결
-scripts/      문법 검사
+scripts/      문법·SDK 출처/해시/import 검사 및 재현 추출
+vendor/       원본 카카오 SDK 22개 모듈과 출처·고지
 test/         SDK·HTTP·권한·중복·CLI 회귀 테스트
 docs/         상세 설치·운영 안내
 .github/      GitHub Actions
@@ -198,9 +202,9 @@ docs/         상세 설치·운영 안내
 
 ## 📜 출처와 이용 조건
 
-- 연결 SDK: [agent-messenger](https://github.com/agent-messenger/agent-messenger), 고정 버전 `2.38.1`
-- 정수 ID 처리: `bson`, 고정 버전 `6.10.4`
-- 타사 코드·라이선스·알려진 의존성 경고: [NOTICE.md](NOTICE.md)
+- 연결 SDK: [agent-messenger](https://github.com/agent-messenger/agent-messenger) `2.38.1`의 카카오 전용 부분집합 — `@kakao-ai-bridge/kakao-sdk@2.38.1-kakao.1`
+- 정수 ID 처리: `bson@6.10.4` · 스키마: `zod@4.6.5`
+- 타사 코드·원본 MIT 선언·별도 LICENSE 전문 부재에 관한 설명: [NOTICE.md](NOTICE.md)
 - 이 저장소는 **소스 공개 시험판**입니다. 브리지 코드의 별도 오픈소스 라이선스는 아직 선택하지 않았으며 `UNLICENSED` 상태입니다. 이용·수정·재배포 허가는 권리자에게 확인하세요. 타사 의존성의 라이선스는 각 원본을 따릅니다.
 
 <div align="center">

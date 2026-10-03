@@ -3,9 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "license": "UNLICENSED",
-  "description": "Private candidate: isolated Kakao transport to a configurable OpenAI-compatible endpoint",
+  "description": "Isolated Kakao transport to a configurable OpenAI-compatible endpoint",
   "type": "module",
-  "engines": {"node": ">=22.13.0 <25"},
+  "engines": {
+    "node": ">=22.13.0 <25"
+  },
   "scripts": {
     "setup": "node bin/bridge.mjs setup",
     "login": "node bin/bridge.mjs login",
@@ -13,11 +15,15 @@
     "start": "node bin/bridge.mjs start",
     "doctor": "node bin/bridge.mjs doctor",
     "test": "node --test test/*.test.mjs",
-    "check": "node scripts/check.mjs"
+    "check": "node scripts/check.mjs && npm run vendor:check",
+    "vendor:check": "node scripts/kakao-subset.mjs check",
+    "vendor:extract": "node scripts/kakao-subset.mjs extract"
   },
-  "dependencies": {"agent-messenger": "2.38.1", "bson": "6.10.4"},
-  "overrides": {
-    "agent-messenger@2.38.1": {"thrift": "0.25.0"},
-    "node-jose@2.2.0": {"uuid": "11.1.1"}
+  "dependencies": {
+    "@kakao-ai-bridge/kakao-sdk": "file:vendor/kakao-sdk",
+    "bson": "6.10.4"
+  },
+  "devDependencies": {
+    "acorn": "8.18.0"
   }
 }

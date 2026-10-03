@@ -4,7 +4,7 @@
 
 흐름: 카카오톡 → 이 브리지 → 본인의 AI endpoint → 이 브리지 → 원래 허용 방
 
-공식 카카오 봇 API가 아닌 `agent-messenger@2.38.1` 기반입니다. 계정 제한, 비공식 프로토콜 변경, 다른 기기 세션 충돌 위험이 있습니다. 운영 준비 완료나 카카오 승인 제품이 아닙니다. 중요한 개인 계정 대신 본인 소유의 별도 테스트 계정을 권장합니다. 타인 계정, 기존 운영 봇의 세션, 개인 AI 게이트웨이 자격증명을 복사하지 마세요.
+공식 카카오 봇 API가 아닌 `agent-messenger@2.38.1`의 [카카오 전용 22개 모듈](SDK-SUBSET.md) 기반입니다. 계정 제한, 비공식 프로토콜 변경, 다른 기기 세션 충돌 위험이 있습니다. 운영 준비 완료나 카카오 승인 제품이 아닙니다. 중요한 개인 계정 대신 본인 소유의 별도 테스트 계정을 권장합니다. 타인 계정, 기존 운영 봇의 세션, 개인 AI 게이트웨이 자격증명을 복사하지 마세요.
 
 ## 포함한 것 / 포함하지 않은 것
 
@@ -32,7 +32,7 @@ Node.js 22.13 이상 24.x 이하와 npm이 필요합니다(22.x/24.x LTS 권장)
 이 소스를 받은 뒤 프로젝트 디렉터리에서 실행합니다. 저장소: https://github.com/Dj-Lee2/kakao-ai-bridge
 
 ```sh
-npm ci --ignore-scripts --omit=optional
+npm ci --ignore-scripts
 npm run check
 npm test
 npm run setup
@@ -142,16 +142,16 @@ npm start
 ## 검증과 알려진 한계
 
 ```sh
-npm ci --ignore-scripts --omit=optional
+npm ci --ignore-scripts
 npm run check
 npm test
-npm audit --omit=optional
+npm audit --audit-level=low
 ```
 
 테스트는 실제 고정 SDK import, 실제 SDK `loginFlow`의 mock HTTP 등록 순서, 실제 SDK listener의 mock push → 로컬 HTTP AI → mock 단일 WRITE/readback, 설정/권한/중복/발신자/종료/CLI 차단을 실행합니다. 카카오 서버로 실제 로그인하거나 메시지를 보내지 않습니다. 실제 카카오 계정 연동과 여러 OS/AI provider 실서비스 호환성은 미검증입니다. 서비스별 모델 파라미터 차이 때문에 `max_tokens` 등을 받지 않는 endpoint는 지원하지 않을 수 있습니다. Responses API/stream/tool-call 출력은 지원하지 않습니다.
 
-고정 의존성 audit에서 영향받는 항목 6개(high 5, moderate 1)가 확인되었습니다. `agent-messenger`, `node-forge`, `node-jose`, `node-kms`, `uuid`, `webex-message-handler` 경로입니다. 여러 메신저를 담은 upstream 패키지 전체의 보고이며 이 브리지에서의 실제 악용 가능성은 별도 검토 대상입니다. 취약점 없음/운영 보안 승인이라고 주장하지 않습니다. `npm audit fix --force`가 오래된 SDK로 변경할 수 있으므로 실행하지 마세요. SDK 변경은 API/인증/안전 회귀 검증과 함께 별도 작업으로 진행해야 합니다.
+카카오 전용 부분집합으로 전환해 사용하지 않는 메신저와 의존성 자체를 제거했습니다. 실행 패키지는 `bson@6.10.4`, `zod@4.6.5`이며 개발용 parser까지 포함한 전체 audit에서 보고 항목 0개를 확인했습니다. 원본 22개 모듈·출처 고지·정적/동적 import를 대조하며 잠금파일·스캐너 검사를 유지합니다. 이는 알려진 의존성 경고 기준이며 취약점 부재/운영 보안 승인을 뜻하지 않습니다. `npm audit fix --force`는 실행하지 마세요. SDK 변경은 [재현·출처 검사](SDK-SUBSET.md)와 API/인증/안전 회귀 검증을 함께 진행해야 합니다.
 
 ## 라이선스와 출처
 
-[NOTICE.md](../NOTICE.md)를 확인하세요. 이 브리지의 새 코드는 권리자의 공개 라이선스 선택 전이므로 `private: true`, `UNLICENSED` 상태입니다. 이는 권리자 대신 배포 라이선스를 선택하지 않았다는 뜻입니다. 소스 공개는 오픈소스 라이선스 부여와 다릅니다. 별도 이용·수정·재배포 허가는 권리자에게 확인하세요. npm SDK 및 소스 원본을 이 소스 묶음에 vendoring하지 않으며 설치 시 잠금파일에 따라 가져옵니다.
+[NOTICE.md](../NOTICE.md)를 확인하세요. 이 브리지의 새 코드는 권리자의 공개 라이선스 선택 전이므로 `private: true`, `UNLICENSED` 상태입니다. 이는 권리자 대신 배포 라이선스를 선택하지 않았다는 뜻입니다. 소스 공개는 오픈소스 라이선스 부여와 다릅니다. 별도 이용·수정·재배포 허가는 권리자에게 확인하세요. 카카오 전용 원본 JavaScript 22개와 원본 README·protocol NOTICE는 `vendor/kakao-sdk`에 보존합니다. 상류 README의 MIT 선언을 근거로 사용하되, 최상위 LICENSE 전문과 package.json license 필드가 없다는 사실도 함께 알립니다. 없는 저작권자나 허가문을 만들지 않았습니다. 나머지 npm 의존성은 잠금파일로 설치합니다.

@@ -2,10 +2,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createRequire } from 'node:module';
 import { loadConfig, requireRunnable } from '../src/config.mjs';
 import { StateStore, checkPrivateFile } from '../src/store.mjs';
-import { loadSdk } from '../src/sdk.mjs';
+import { loadSdk, assertSdkPackage } from '../src/sdk.mjs';
 import { login, connectClient, validateSession } from '../src/auth.mjs';
 import { hiddenPrompt, displayPasscode, requireTty } from '../src/prompt.mjs';
 import { Bridge } from '../src/bridge.mjs';
@@ -38,7 +37,7 @@ async function main(){
     check('configuration',()=>requireRunnable(cfg));
     check('session',()=>validateSession(store.read('session.json')));
     check('private_state',()=>{if(fs.existsSync(store.root))store.init();else fail('state_not_initialized');});
-    check('pinned_sdk',()=>{const require=createRequire(import.meta.url);const p=require('agent-messenger/package.json');if(p.version!=='2.38.1')fail('unsupported_sdk_version');});
+    check('pinned_sdk',assertSdkPackage);
     check('not_locked',()=>{if(fs.existsSync(path.join(store.root,'lock.json')))fail('state_locked');});
     process.stdout.write(JSON.stringify({offline:true,networkChecked:false,roomsConfigured:cfg.rooms.length,checks},null,2)+'\n');
     return checks.every(x=>x.ok)?0:1;

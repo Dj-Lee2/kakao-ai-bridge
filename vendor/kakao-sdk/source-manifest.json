@@ -1,0 +1,651 @@
+{
+  "schemaVersion": 1,
+  "upstream": {
+    "name": "agent-messenger",
+    "version": "2.38.1",
+    "gitHead": "801d7c441e5d52c6840954134b4d16994e0df5a3",
+    "archiveUrl": "https://registry.npmjs.org/agent-messenger/-/agent-messenger-2.38.1.tgz",
+    "sha256": "e72b7af4ad4a61c6263c9814438019ae043a1a339520addfddfa9591b5e4e22a",
+    "integrity": "sha512-p2NMTVCi8jethIpp1BDOg1uEyR2Ofq6a0wrAuNeDBwP2nqgV507IQJiFlUCSUi2nltk1AS9LhrjWt3dFXlUiQA==",
+    "entrypoint": "dist/src/platforms/kakaotalk/index.js",
+    "packageJsonSha256": "f20693957bb72a18551b80e1eff5fedd591a4ad7712b81681f7a9dac2c87c15b"
+  },
+  "subset": {
+    "name": "@kakao-ai-bridge/kakao-sdk",
+    "version": "2.38.1-kakao.1",
+    "runtimeModuleCount": 22,
+    "sourceModification": "none",
+    "sourceMapsAndTypes": "not distributed; JS sourceMappingURL comments unchanged"
+  },
+  "license": {
+    "declared": "MIT",
+    "declaration": "provenance/README.upstream.md",
+    "standaloneTopLevelLicense": false,
+    "originalPackageLicenseField": null,
+    "archiveNoticeInventory": [
+      "dist/src/vendor/linejs-types/LICENSE",
+      "dist/src/vendor/linejs/LICENSE",
+      "dist/src/vendor/loose-types/LICENSE",
+      "src/platforms/kakaotalk/protocol/NOTICE.md",
+      "src/vendor/linejs-types/LICENSE",
+      "src/vendor/linejs/LICENSE",
+      "src/vendor/loose-types/LICENSE"
+    ]
+  },
+  "dependencies": {
+    "bson": "6.10.4",
+    "zod": "4.6.5"
+  },
+  "files": [
+    {
+      "path": "dist/src/platforms/kakaotalk/attachment-router.js",
+      "upstreamPath": "package/dist/src/platforms/kakaotalk/attachment-router.js",
+      "sha256": "1e89e73d163c9b0bb96758eba53096d2dc54db6fa53236508b16fd4fee061ef8",
+      "bytes": 1247,
+      "role": "runtime"
+    },
+    {
+      "path": "dist/src/platforms/kakaotalk/auth/kakao-login.js",
+      "upstreamPath": "package/dist/src/platforms/kakaotalk/auth/kakao-login.js",
+      "sha256": "e9dbe7f84223868102db37ce529789938515c69dad3cd3fc708830366bb3153a",
+      "bytes": 9009,
+      "role": "runtime"
+    },
+    {
+      "path": "dist/src/platforms/kakaotalk/auth/oauth-refresh.js",
+      "upstreamPath": "package/dist/src/platforms/kakaotalk/auth/oauth-refresh.js",
+      "sha256": "4eb3dc71a88752834a5284269ace2c8dc6680800c282821fb40880ba00079592",
+      "bytes": 4356,
+      "role": "runtime"
+    },
+    {
+      "path": "dist/src/platforms/kakaotalk/chat-classifier.js",
+      "upstreamPath": "package/dist/src/platforms/kakaotalk/chat-classifier.js",
+      "sha256": "d5b9066c2496a801a95a1d2a60e339a69e659698d0774e68dc03f9c587545c37",
+      "bytes": 1579,
+      "role": "runtime"
+    },
+    {
+      "path": "dist/src/platforms/kakaotalk/client.js",
+      "upstreamPath": "package/dist/src/platforms/kakaotalk/client.js",
+      "sha256": "6090099c4eb9470fdf2c13220ec3fc6e6ff4c342abf98cb9ee2f67ef35535648",
+      "bytes": 67120,
+      "role": "runtime"
+    },
+    {
+      "path": "dist/src/platforms/kakaotalk/credential-manager.js",
+      "upstreamPath": "package/dist/src/platforms/kakaotalk/credential-manager.js",
+      "sha256": "7cd7f3883602734a003eea51f26e439031ae97f06b62e26dfcdedc66002c21cf",
+      "bytes": 3092,
+      "role": "runtime"
+    },
+    {
+      "path": "dist/src/platforms/kakaotalk/ensure-auth.js",
+      "upstreamPath": "package/dist/src/platforms/kakaotalk/ensure-auth.js",
+      "sha256": "152bf997acb97c810b763635d816195bed91534a779a7ff9ba889fda4fde4457",
+      "bytes": 502,
+      "role": "runtime"
+    },
+    {
+      "path": "dist/src/platforms/kakaotalk/image-meta.js",
+      "upstreamPath": "package/dist/src/platforms/kakaotalk/image-meta.js",
+      "sha256": "d01792fce4fd3934cc63094eead04c2cd3562bbd600e65671da7b54894d764fd",
+      "bytes": 6143,
+      "role": "runtime"
+    },
+    {
+      "path": "dist/src/platforms/kakaotalk/index.js",
+      "upstreamPath": "package/dist/src/platforms/kakaotalk/index.js",
+      "sha256": "876609d5fe08b0513be2d5b0cbff2e7790e3ec75934dba77e7e6e49cb3b9b9fd",
+      "bytes": 1216,
+      "role": "runtime"
+    },
+    {
+      "path": "dist/src/platforms/kakaotalk/listener.js",
+      "upstreamPath": "package/dist/src/platforms/kakaotalk/listener.js",
+      "sha256": "e96cfb113158744fb48cbcb8299ca688816befb22e86c258c58efec3d09c011f",
+      "bytes": 7042,
+      "role": "runtime"
+    },
+    {
+      "path": "dist/src/platforms/kakaotalk/media-upload.js",
+      "upstreamPath": "package/dist/src/platforms/kakaotalk/media-upload.js",
+      "sha256": "741d5854993a321008f143c1532af1378587729cd02b15be4419ccff7c4be6cc",
+      "bytes": 1634,
+      "role": "runtime"
+    },
+    {
+      "path": "dist/src/platforms/kakaotalk/protocol/config.js",
+      "upstreamPath": "package/dist/src/platforms/kakaotalk/protocol/config.js",
+      "sha256": "f292b5da06300df91fcf14db86c26a30fe77ca5e5ef280547179f0a0a803b697",
+      "bytes": 1870,
+      "role": "runtime"
+    },
+    {
+      "path": "dist/src/platforms/kakaotalk/protocol/connection.js",
+      "upstreamPath": "package/dist/src/platforms/kakaotalk/protocol/connection.js",
+      "sha256": "2355865e9827d3e24c0028423fcdc9e45c43b178e439e3bc8e5b3894c885a1fe",
+      "bytes": 6463,
+      "role": "runtime"
+    },
+    {
+      "path": "dist/src/platforms/kakaotalk/protocol/crypto.js",
+      "upstreamPath": "package/dist/src/platforms/kakaotalk/protocol/crypto.js",
+      "sha256": "bdd189d43bad89a30f6e0708fc27cfa727238c6c582a3ded67fc14d304d8ccdd",
+      "bytes": 2671,
+      "role": "runtime"
+    },
+    {
+      "path": "dist/src/platforms/kakaotalk/protocol/login-response.js",
+      "upstreamPath": "package/dist/src/platforms/kakaotalk/protocol/login-response.js",
+      "sha256": "8b104074cd646545648895dc3ea12458c44a6aea4b0ec41ec0a505b031574fa1",
+      "bytes": 1387,
+      "role": "runtime"
+    },
+    {
+      "path": "dist/src/platforms/kakaotalk/protocol/media-uploader.js",
+      "upstreamPath": "package/dist/src/platforms/kakaotalk/protocol/media-uploader.js",
+      "sha256": "a54b1e665e0136d4930fa37f38ceaa4e8620eb016811ebe3cdab2a3bb328af31",
+      "bytes": 3851,
+      "role": "runtime"
+    },
+    {
+      "path": "dist/src/platforms/kakaotalk/protocol/packet.js",
+      "upstreamPath": "package/dist/src/platforms/kakaotalk/protocol/packet.js",
+      "sha256": "0c4a49a1c6963741f264ac5a80b513fda3c9eb01eb3cb93be36e1e69aec32183",
+      "bytes": 1523,
+      "role": "runtime"
+    },
+    {
+      "path": "dist/src/platforms/kakaotalk/protocol/session.js",
+      "upstreamPath": "package/dist/src/platforms/kakaotalk/protocol/session.js",
+      "sha256": "a40bf8753c5e81f7be7476e434b28762ad042a056602e51cbfa1878962329aea",
+      "bytes": 14066,
+      "role": "runtime"
+    },
+    {
+      "path": "dist/src/platforms/kakaotalk/protocol/types.js",
+      "upstreamPath": "package/dist/src/platforms/kakaotalk/protocol/types.js",
+      "sha256": "d3501e0f916b2e1adc175fdba0034ed168ed4fe5b188944af7822160362af89c",
+      "bytes": 299,
+      "role": "runtime"
+    },
+    {
+      "path": "dist/src/platforms/kakaotalk/types.js",
+      "upstreamPath": "package/dist/src/platforms/kakaotalk/types.js",
+      "sha256": "6464e6af3e08cf99e24988889cf19286b05a32988a7844059d2d2b5b2fa745d3",
+      "bytes": 6015,
+      "role": "runtime"
+    },
+    {
+      "path": "dist/src/shared/utils/config-dir.js",
+      "upstreamPath": "package/dist/src/shared/utils/config-dir.js",
+      "sha256": "6c8c671edefe9e72c09b17a276a2ea03be8d7646e9e6ae3bcaacba23215145ef",
+      "bytes": 793,
+      "role": "runtime"
+    },
+    {
+      "path": "dist/src/shared/utils/stderr.js",
+      "upstreamPath": "package/dist/src/shared/utils/stderr.js",
+      "sha256": "bafa813d0bab5252ab6f16fec7b196b3075f1be5d7e79eb8b6920c9a977dc524",
+      "bytes": 581,
+      "role": "runtime"
+    },
+    {
+      "path": "provenance/README.upstream.md",
+      "upstreamPath": "package/README.md",
+      "sha256": "3b452b00365d512b6706026b59b570297bb98db90e6c91097e9e17bbd2ede47f",
+      "bytes": 38432,
+      "role": "license-declaration"
+    },
+    {
+      "path": "src/platforms/kakaotalk/protocol/NOTICE.md",
+      "upstreamPath": "package/src/platforms/kakaotalk/protocol/NOTICE.md",
+      "sha256": "a6fc29175a36fafd6912bbd500d0511009dbc5df3e3f1e8d9905abcfdb7c6080",
+      "bytes": 2002,
+      "role": "protocol-notice"
+    }
+  ],
+  "closure": {
+    "modules": [
+      {
+        "path": "dist/src/platforms/kakaotalk/attachment-router.js",
+        "sha256": "1e89e73d163c9b0bb96758eba53096d2dc54db6fa53236508b16fd4fee061ef8",
+        "bytes": 1247,
+        "imports": [
+          {
+            "specifier": "./media-upload.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/media-upload.js"
+          }
+        ]
+      },
+      {
+        "path": "dist/src/platforms/kakaotalk/auth/kakao-login.js",
+        "sha256": "e9dbe7f84223868102db37ce529789938515c69dad3cd3fc708830366bb3153a",
+        "bytes": 9009,
+        "imports": [
+          {
+            "specifier": "node:crypto",
+            "kind": "static"
+          }
+        ]
+      },
+      {
+        "path": "dist/src/platforms/kakaotalk/auth/oauth-refresh.js",
+        "sha256": "4eb3dc71a88752834a5284269ace2c8dc6680800c282821fb40880ba00079592",
+        "bytes": 4356,
+        "imports": [
+          {
+            "specifier": "node:crypto",
+            "kind": "static"
+          },
+          {
+            "specifier": "./kakao-login.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/auth/kakao-login.js"
+          }
+        ]
+      },
+      {
+        "path": "dist/src/platforms/kakaotalk/chat-classifier.js",
+        "sha256": "d5b9066c2496a801a95a1d2a60e339a69e659698d0774e68dc03f9c587545c37",
+        "bytes": 1579,
+        "imports": [
+          {
+            "specifier": "./types.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/types.js"
+          }
+        ]
+      },
+      {
+        "path": "dist/src/platforms/kakaotalk/client.js",
+        "sha256": "6090099c4eb9470fdf2c13220ec3fc6e6ff4c342abf98cb9ee2f67ef35535648",
+        "bytes": 67120,
+        "imports": [
+          {
+            "specifier": "node:fs",
+            "kind": "static"
+          },
+          {
+            "specifier": "node:fs/promises",
+            "kind": "static"
+          },
+          {
+            "specifier": "node:path",
+            "kind": "static"
+          },
+          {
+            "specifier": "bson",
+            "kind": "static"
+          },
+          {
+            "specifier": "../../shared/utils/config-dir.js",
+            "kind": "static",
+            "target": "dist/src/shared/utils/config-dir.js"
+          },
+          {
+            "specifier": "../../shared/utils/stderr.js",
+            "kind": "static",
+            "target": "dist/src/shared/utils/stderr.js"
+          },
+          {
+            "specifier": "./attachment-router.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/attachment-router.js"
+          },
+          {
+            "specifier": "./chat-classifier.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/chat-classifier.js"
+          },
+          {
+            "specifier": "./image-meta.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/image-meta.js"
+          },
+          {
+            "specifier": "./media-upload.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/media-upload.js"
+          },
+          {
+            "specifier": "./protocol/config.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/protocol/config.js"
+          },
+          {
+            "specifier": "./protocol/login-response.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/protocol/login-response.js"
+          },
+          {
+            "specifier": "./protocol/media-uploader.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/protocol/media-uploader.js"
+          },
+          {
+            "specifier": "./protocol/session.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/protocol/session.js"
+          },
+          {
+            "specifier": "./types.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/types.js"
+          },
+          {
+            "specifier": "./ensure-auth.js",
+            "kind": "dynamic",
+            "target": "dist/src/platforms/kakaotalk/ensure-auth.js"
+          }
+        ]
+      },
+      {
+        "path": "dist/src/platforms/kakaotalk/credential-manager.js",
+        "sha256": "7cd7f3883602734a003eea51f26e439031ae97f06b62e26dfcdedc66002c21cf",
+        "bytes": 3092,
+        "imports": [
+          {
+            "specifier": "node:fs",
+            "kind": "static"
+          },
+          {
+            "specifier": "node:fs/promises",
+            "kind": "static"
+          },
+          {
+            "specifier": "node:path",
+            "kind": "static"
+          },
+          {
+            "specifier": "../../shared/utils/config-dir.js",
+            "kind": "static",
+            "target": "dist/src/shared/utils/config-dir.js"
+          }
+        ]
+      },
+      {
+        "path": "dist/src/platforms/kakaotalk/ensure-auth.js",
+        "sha256": "152bf997acb97c810b763635d816195bed91534a779a7ff9ba889fda4fde4457",
+        "bytes": 502,
+        "imports": [
+          {
+            "specifier": "./credential-manager.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/credential-manager.js"
+          }
+        ]
+      },
+      {
+        "path": "dist/src/platforms/kakaotalk/image-meta.js",
+        "sha256": "d01792fce4fd3934cc63094eead04c2cd3562bbd600e65671da7b54894d764fd",
+        "bytes": 6143,
+        "imports": []
+      },
+      {
+        "path": "dist/src/platforms/kakaotalk/index.js",
+        "sha256": "876609d5fe08b0513be2d5b0cbff2e7790e3ec75934dba77e7e6e49cb3b9b9fd",
+        "bytes": 1216,
+        "imports": [
+          {
+            "specifier": "./client.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/client.js"
+          },
+          {
+            "specifier": "./chat-classifier.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/chat-classifier.js"
+          },
+          {
+            "specifier": "./credential-manager.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/credential-manager.js"
+          },
+          {
+            "specifier": "./listener.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/listener.js"
+          },
+          {
+            "specifier": "./types.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/types.js"
+          },
+          {
+            "specifier": "./auth/kakao-login.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/auth/kakao-login.js"
+          },
+          {
+            "specifier": "./auth/oauth-refresh.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/auth/oauth-refresh.js"
+          },
+          {
+            "specifier": "./media-upload.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/media-upload.js"
+          },
+          {
+            "specifier": "./image-meta.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/image-meta.js"
+          },
+          {
+            "specifier": "./attachment-router.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/attachment-router.js"
+          }
+        ]
+      },
+      {
+        "path": "dist/src/platforms/kakaotalk/listener.js",
+        "sha256": "e96cfb113158744fb48cbcb8299ca688816befb22e86c258c58efec3d09c011f",
+        "bytes": 7042,
+        "imports": [
+          {
+            "specifier": "events",
+            "kind": "static"
+          },
+          {
+            "specifier": "./types.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/types.js"
+          }
+        ]
+      },
+      {
+        "path": "dist/src/platforms/kakaotalk/media-upload.js",
+        "sha256": "741d5854993a321008f143c1532af1378587729cd02b15be4419ccff7c4be6cc",
+        "bytes": 1634,
+        "imports": []
+      },
+      {
+        "path": "dist/src/platforms/kakaotalk/protocol/config.js",
+        "sha256": "f292b5da06300df91fcf14db86c26a30fe77ca5e5ef280547179f0a0a803b697",
+        "bytes": 1870,
+        "imports": []
+      },
+      {
+        "path": "dist/src/platforms/kakaotalk/protocol/connection.js",
+        "sha256": "2355865e9827d3e24c0028423fcdc9e45c43b178e439e3bc8e5b3894c885a1fe",
+        "bytes": 6463,
+        "imports": [
+          {
+            "specifier": "node:net",
+            "kind": "static"
+          },
+          {
+            "specifier": "node:tls",
+            "kind": "static"
+          },
+          {
+            "specifier": "../../../shared/utils/stderr.js",
+            "kind": "static",
+            "target": "dist/src/shared/utils/stderr.js"
+          },
+          {
+            "specifier": "./crypto.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/protocol/crypto.js"
+          },
+          {
+            "specifier": "./packet.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/protocol/packet.js"
+          }
+        ]
+      },
+      {
+        "path": "dist/src/platforms/kakaotalk/protocol/crypto.js",
+        "sha256": "bdd189d43bad89a30f6e0708fc27cfa727238c6c582a3ded67fc14d304d8ccdd",
+        "bytes": 2671,
+        "imports": [
+          {
+            "specifier": "node:crypto",
+            "kind": "static"
+          },
+          {
+            "specifier": "./config.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/protocol/config.js"
+          },
+          {
+            "specifier": "./types.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/protocol/types.js"
+          }
+        ]
+      },
+      {
+        "path": "dist/src/platforms/kakaotalk/protocol/login-response.js",
+        "sha256": "8b104074cd646545648895dc3ea12458c44a6aea4b0ec41ec0a505b031574fa1",
+        "bytes": 1387,
+        "imports": []
+      },
+      {
+        "path": "dist/src/platforms/kakaotalk/protocol/media-uploader.js",
+        "sha256": "a54b1e665e0136d4930fa37f38ceaa4e8620eb016811ebe3cdab2a3bb328af31",
+        "bytes": 3851,
+        "imports": [
+          {
+            "specifier": "bson",
+            "kind": "static"
+          },
+          {
+            "specifier": "./config.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/protocol/config.js"
+          },
+          {
+            "specifier": "./connection.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/protocol/connection.js"
+          }
+        ]
+      },
+      {
+        "path": "dist/src/platforms/kakaotalk/protocol/packet.js",
+        "sha256": "0c4a49a1c6963741f264ac5a80b513fda3c9eb01eb3cb93be36e1e69aec32183",
+        "bytes": 1523,
+        "imports": [
+          {
+            "specifier": "bson",
+            "kind": "static"
+          },
+          {
+            "specifier": "./types.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/protocol/types.js"
+          }
+        ]
+      },
+      {
+        "path": "dist/src/platforms/kakaotalk/protocol/session.js",
+        "sha256": "a40bf8753c5e81f7be7476e434b28762ad042a056602e51cbfa1878962329aea",
+        "bytes": 14066,
+        "imports": [
+          {
+            "specifier": "bson",
+            "kind": "static"
+          },
+          {
+            "specifier": "../types.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/types.js"
+          },
+          {
+            "specifier": "./config.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/protocol/config.js"
+          },
+          {
+            "specifier": "./connection.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/protocol/connection.js"
+          },
+          {
+            "specifier": "./login-response.js",
+            "kind": "static",
+            "target": "dist/src/platforms/kakaotalk/protocol/login-response.js"
+          }
+        ]
+      },
+      {
+        "path": "dist/src/platforms/kakaotalk/protocol/types.js",
+        "sha256": "d3501e0f916b2e1adc175fdba0034ed168ed4fe5b188944af7822160362af89c",
+        "bytes": 299,
+        "imports": []
+      },
+      {
+        "path": "dist/src/platforms/kakaotalk/types.js",
+        "sha256": "6464e6af3e08cf99e24988889cf19286b05a32988a7844059d2d2b5b2fa745d3",
+        "bytes": 6015,
+        "imports": [
+          {
+            "specifier": "zod",
+            "kind": "static"
+          }
+        ]
+      },
+      {
+        "path": "dist/src/shared/utils/config-dir.js",
+        "sha256": "6c8c671edefe9e72c09b17a276a2ea03be8d7646e9e6ae3bcaacba23215145ef",
+        "bytes": 793,
+        "imports": [
+          {
+            "specifier": "node:os",
+            "kind": "static"
+          },
+          {
+            "specifier": "node:path",
+            "kind": "static"
+          }
+        ]
+      },
+      {
+        "path": "dist/src/shared/utils/stderr.js",
+        "sha256": "bafa813d0bab5252ab6f16fec7b196b3075f1be5d7e79eb8b6920c9a977dc524",
+        "bytes": 581,
+        "imports": []
+      }
+    ],
+    "external": [
+      "bson",
+      "zod"
+    ],
+    "builtins": [
+      "events",
+      "node:crypto",
+      "node:fs",
+      "node:fs/promises",
+      "node:net",
+      "node:os",
+      "node:path",
+      "node:tls"
+    ]
+  }
+}

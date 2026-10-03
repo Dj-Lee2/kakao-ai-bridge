@@ -2,36 +2,44 @@
 
 ## 이 브리지의 코드
 
-기존 카카오 브리지의 검증된 SDK 연결·수신 형태, 방/멤버 검증, 단일 low-level 발송, readback, 원자적 상태 저장 패턴을 바탕으로 새 portable CLI/구조를 작성했습니다. 검토한 기존 소스는 `kakao-vps-20261001/bridge-src`, `bridge-reference`, `deploy/Dockerfile`, `kakao-team-20261002/bridge-integration`, `kakao-zoom-20261001/deploy/bridge-main.mjs`입니다. 운영 경로·개인 프롬프트·운영 계정/방/토큰·상태는 가져오지 않았습니다.
+기존 카카오 브리지의 검증된 SDK 연결·수신 형태, 방/멤버 검증, 단일 low-level 발송, readback, 원자적 상태 저장 패턴을 바탕으로 새 portable CLI/구조를 작성했습니다. 운영 경로·개인 프롬프트·운영 계정/방/토큰·상태는 가져오지 않았습니다.
 
-이 프로젝트 코드에 대해 권리자의 공개 라이선스를 임의로 지정하지 않았습니다. `package.json`의 `private: true`, `license: UNLICENSED`는 npm 공개 게시를 막고 라이선스 선택이 아직 안 됐음을 표시합니다. 파일명 LICENSE로 새 권리/허가문을 만들지 않았습니다. 소스는 공개하되 별도 오픈소스 이용·수정·재배포 라이선스는 아직 부여하지 않았습니다. 해당 허가는 권리자에게 확인하세요.
+이 프로젝트 코드에 대해 권리자의 공개 라이선스를 임의로 지정하지 않았습니다. 루트 `package.json`의 `private: true`, `license: UNLICENSED`는 npm 공개 게시를 막고 브리지 코드의 라이선스 선택이 아직 안 됐음을 표시합니다. 소스 공개는 별도 이용·수정·재배포 허가와 다릅니다. 해당 허가는 권리자에게 확인하세요. 이 표시는 아래 타사 코드의 라이선스를 변경하지 않습니다.
 
-## agent-messenger 2.38.1
+## agent-messenger 2.38.1에서 가져온 카카오 전용 코드
 
 - 원 프로젝트: https://github.com/agent-messenger/agent-messenger
-- npm: https://www.npmjs.com/package/agent-messenger/v/2.38.1
 - 고정 배포본: https://registry.npmjs.org/agent-messenger/-/agent-messenger-2.38.1.tgz
-- 원 프로젝트와 npm 배포본 README는 License 섹션에서 MIT라고 선언합니다.
-- 검토한 고정 npm 배포본에는 최상위 전문 LICENSE 파일이 없고 package.json의 license 필드도 없습니다. README의 MIT 선언을 기록하되, 이 묶음에서 완전한 권리자/저작권 문구를 추정하거나 SDK 전체에 새 라이선스를 부여하지 않습니다. 공개 재배포 전 upstream의 전문/고지 요건을 확인하세요.
-- SDK 내부의 protocol/vendor별 고지·라이선스는 각각에 적용됩니다. 일부 vendor의 MIT 파일을 SDK 전체의 라이선스 전문으로 대신하지 마세요.
-- 이 소스 묶음은 SDK 코드를 복사해 vendoring하지 않습니다. 설치 시 npm에서 잠금파일에 따라 가져옵니다. node_modules나 upstream tarball을 배포 묶음에 포함하지 마세요.
+- 원본 SHA256: `e72b7af4ad4a61c6263c9814438019ae043a1a339520addfddfa9591b5e4e22a`
+- npm gitHead: `801d7c441e5d52c6840954134b4d16994e0df5a3`
+- 원본 공개 진입점 `agent-messenger/kakaotalk`에서 도달하는 JavaScript 22개를 **수정 없이** `vendor/kakao-sdk/dist/src`에 보존합니다. 전체 SDK·다른 메신저·상류 CLI를 포함하지 않습니다.
+- 별도 이름 `@kakao-ai-bridge/kakao-sdk@2.38.1-kakao.1`은 이 브리지에서 유지하는 부분집합입니다. 상류의 공식 배포나 전체 패키지로 가장하지 않습니다.
+- 원본 파일 경로·해시·import 연결·배포본의 고지 파일 목록은 [source-manifest.json](vendor/kakao-sdk/source-manifest.json)에 있습니다. [재생성·원본 대조 방법](docs/SDK-SUBSET.md)도 제공합니다.
 
-실제로 확인한 API/구현:
-- public export `agent-messenger/kakaotalk`: `loginFlow`, `KakaoTalkClient`, `KakaoTalkListener`
-- `dist/src/platforms/kakaotalk/auth/kakao-login.js`: tablet/force:false, passcode generate/register, 승인 후 재로그인
-- `client.js`: 명시적 oauthToken/userId/deviceUuid/deviceType 로그인, acquireSession, 방/멤버/readback API
-- `listener.js`: message/disconnected/error/member_joined/member_left, error 후 start가 resolve될 수 있는 계약
-- `dist/src/shared/utils/config-dir.js`: `AGENT_MESSENGER_CONFIG_DIR`
-- `protocol/session.js`: low-level 단일 `sendMessage(Long,text)`
+### 상류의 MIT 선언과 확인이 필요한 부분
 
-SDK high-level sendMessage의 reconnect/retry, SDK auth CLI의 로컬 자격증명 추출 및 debugLog(원 응답에 토큰 포함 가능)는 사용하지 않습니다. 인증 과정은 자체 구현/추측한 HTTP API가 아니라 실제 고정 SDK 함수를 호출합니다.
+원본 npm README와 해당 gitHead의 README는 다음처럼 명시합니다.
 
-## bson 및 기타 의존성
+```text
+## License
 
-`bson@6.10.4`를 고정해 실제 SDK와 같은 Long 인코딩에 사용합니다. 각 의존성의 권리·고지·라이선스는 원 배포본과 package-lock.json의 메타데이터를 확인하세요. 이 프로젝트의 UNLICENSED 표시는 타사 의존성의 라이선스를 변경하지 않습니다.
+MIT
+```
+
+이 명시적 MIT 선언을 카카오 부분집합의 출처·라이선스 근거로 사용하며, [원본 README 전체](vendor/kakao-sdk/provenance/README.upstream.md)를 바이트 변경 없이 보존합니다. 다만 **원본 tarball에는 최상위 전문 LICENSE 파일이 없고 package.json에도 license 필드가 없습니다.** 없는 저작권자·연도·허가문을 만들어 넣지 않았습니다. [UPSTREAM-LICENSE.md](vendor/kakao-sdk/UPSTREAM-LICENSE.md)는 이 사실을 설명하는 문서이지 새 권리를 부여하는 라이선스 전문이 아닙니다. 완전한 권리 문서가 필요한 공개·상업적 이용에서는 상류에 전문·저작권 고지의 명확화를 요청하세요. 법률상 적합성을 독립적으로 보증하지 않습니다.
+
+[Kakao protocol 원본 NOTICE](vendor/kakao-sdk/src/platforms/kakaotalk/protocol/NOTICE.md)도 그대로 보존했습니다. 이 고지는 구현을 새로 작성했고 열거한 프로젝트에서 코드를 복사하지 않았다고 설명합니다. MIT 외에 라이선스 미지정·비상업적 조건의 프로토콜 참고자료도 **원문 그대로** 명시합니다. 참고자료 전체가 MIT라고 재표시하지 않습니다. 이 설명은 상류의 진술이며 독립적인 법적 권리 검증을 대신하지 않습니다. 제외한 LINE 코드의 별도 라이선스를 카카오 코드 전체의 전문으로 대신하지 않습니다.
+
+### 보존한 연결 계약
+
+`loginFlow`, `KakaoTalkClient`, `KakaoTalkListener`와 공개 JavaScript export 전체를 유지합니다. `AGENT_MESSENGER_CONFIG_DIR`라는 상류 환경변수 이름도 그대로 사용하되 전용 상태 폴더로 덮어씁니다. SDK high-level sendMessage의 reconnect/retry, 상류 auth CLI의 로컬 자격증명 추출·debugLog는 사용하지 않습니다. 인증은 임의 구현한 API가 아니라 원본 SDK 함수를 호출합니다.
+
+JavaScript 실행 부분집합이므로 TypeScript 선언·빌드 소스·source map은 포함하지 않습니다. 코드 바이트 보존을 위해 원본 `sourceMappingURL` 주석은 남아 있지만 대응 map 파일은 제공하지 않습니다.
+
+## bson · zod · 검증 도구
+
+실행 의존성은 `bson@6.10.4`(원본과 같은 Long/BSON 처리), `zod@4.6.5`(원본 스키마 처리)입니다. 개발 검증용 AST parser는 `acorn@8.18.0`입니다. 잠금파일로 npm 원 배포본을 설치하며 각 의존성의 권리·고지·라이선스는 해당 패키지 원본을 따릅니다.
 
 ## 보안 검증 한계
 
-실행한 `npm audit --omit=optional`은 영향받는 의존성 항목 6개(high 5, moderate 1)를 보고했습니다. 원 패키지의 여러 메신저 경로에서 파생됩니다. 실제 카카오 경로의 도달성/악용 가능성은 이 수치만으로 판단할 수 없습니다. SDK를 pin한 것은 재현성·API 계약을 위한 것이며 보안 보증이 아닙니다. 자동 강제 수정/다운그레이드를 하지 않았습니다.
-
-`npm ci --ignore-scripts --omit=optional`은 의존성 설치 후크를 비활성화할 뿐 의존성 자체 실행의 위험을 제거하지 않습니다. 실제 계정/프로덕션 서버 검증 없이 로컬 candidate로만 제공합니다.
+부분집합 전환 후 전체 `npm audit`의 보고 항목은 0개였습니다. 설치한 의존성을 검사에서 숨긴 결과가 아니라 사용하지 않는 메신저 코드와 dependency edge를 실제로 제거한 결과입니다. 이 숫자는 조회 시점의 알려진 의존성 경고에 한정되며 실계정 안전성·프로토콜 호환성·미발견 취약점 부재를 보증하지 않습니다. 실제 계정 로그인·송수신 및 기존 운영 봇 변경은 하지 않았습니다.

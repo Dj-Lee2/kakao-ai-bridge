@@ -1,135 +1,303 @@
-import test from 'node:test';
+import test, { before, after, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import http from 'node:http';
-import { createRequire } from 'node:module';
+import net from 'node:net';
+import tls from 'node:tls';
+import { createHash } from 'node:crypto';
+import { createRequire, syncBuiltinESMExports } from 'node:module';
 import { pathToFileURL } from 'node:url';
 
 const require = createRequire(import.meta.url);
-const sdkPackage = require.resolve('agent-messenger/package.json');
+const sdkPackage = require.resolve('@kakao-ai-bridge/kakao-sdk/package.json');
 const sdkRequire = createRequire(sdkPackage);
 const sdkRoot = path.dirname(sdkPackage);
 const sdkImport = relative => import(pathToFileURL(path.join(sdkRoot, 'dist/src', relative)));
-const thrift = sdkRequire('thrift');
-const jose = sdkRequire('node-jose');
-const joseRequire = createRequire(sdkRequire.resolve('node-jose'));
-const uuid = joseRequire('uuid');
+const publicSdk = () => import('@kakao-ai-bridge/kakao-sdk');
 
-// Overrides are deliberately scoped: node-kms still requires uuid's removed
-// callable default export. A blanket uuid upgrade silently breaks that SDK path.
-test('dependency graph uses the tested upstream fixes without a blanket uuid override', () => {
-  assert.equal(sdkRequire('thrift/package.json').version, '0.25.0');
-  assert.equal(joseRequire('uuid/package.json').version, '11.1.1');
-  assert.equal(require('agent-messenger/package.json').version, '2.38.1');
-  const webexRequire = createRequire(sdkRequire.resolve('webex-message-handler'));
-  const kms = webexRequire('node-kms');
-  const id = new kms.Context().requestId();
-  assert.match(id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+// Exercise the installed, unmodified Kakao modules with real BSON/Zod. Never
+// permit an accidental lazy session, HTTP login, or upload to reach a network.
+const networkAttempts = [];
+let fixtureRoot;
+let originalConfigDir;
+before(() => {
+  fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'kakao-subset-regression-'));
+  fs.chmodSync(fixtureRoot, 0o700);
+  originalConfigDir = process.env.AGENT_MESSENGER_CONFIG_DIR;
+  process.env.AGENT_MESSENGER_CONFIG_DIR = path.join(fixtureRoot, 'default-config');
+  fs.mkdirSync(process.env.AGENT_MESSENGER_CONFIG_DIR, { mode: 0o700 });
+  for (const [object, name, label] of [
+    [globalThis, 'fetch', 'fetch'], [net, 'connect', 'net.connect'],
+    [net, 'createConnection', 'net.createConnection'],
+    [net.Socket.prototype, 'connect', 'socket.connect'], [tls, 'connect', 'tls.connect'],
+  ]) {
+    mock.method(object, name, () => {
+      networkAttempts.push(label);
+      throw new Error(`Network forbidden in Kakao dependency tests: ${label}`);
+    });
+  }
+  syncBuiltinESMExports();
 });
-
-test('node-jose resolved UUID rejects undersized and offset-overflow buffers before writing', () => {
-  for (const name of ['v3', 'v5']) {
-    for (const [length, offset] of [[8, 4], [16, 1], [16, -1]]) {
-      const target = new Uint8Array(length).fill(0xaa);
-      assert.throws(() => uuid[name]('fixture', uuid[name].DNS, target, offset), RangeError, `${name}: ${length}/${offset}`);
-      assert.deepEqual(target, new Uint8Array(length).fill(0xaa));
+after(() => {
+  mock.restoreAll();
+  syncBuiltinESMExports();
+  if (originalConfigDir === undefined) delete process.env.AGENT_MESSENGER_CONFIG_DIR;
+  else process.env.AGENT_MESSENGER_CONFIG_DIR = originalConfigDir;
+  if (fixtureRoot) fs.rmSync(fixtureRoot, { recursive: true, force: true });
+  assert.deepEqual(networkAttempts, [], 'even handled network attempts must fail the suite');
+});
+function privateDir(t) {
+  const dir = fs.mkdtempSync(path.join(fixtureRoot, 'case-'));
+  fs.chmodSync(dir, 0o700);
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  return dir;
+}
+function account(accountId, userId) {
+  return {
+    account_id: accountId, user_id: userId, oauth_token: `fixture-token-${accountId}`,
+    refresh_token: `fixture-refresh-${accountId}`, device_uuid: 'a'.repeat(64),
+    device_type: 'tablet', auth_method: 'login',
+    created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z',
+  };
+}
+function dependencyVersion(name) {
+  // BSON deliberately does not export package.json. Resolve from the SDK, then
+  // read that resolved package's manifest rather than a root/hoisted lookalike.
+  let dir = path.dirname(sdkRequire.resolve(name));
+  while (true) {
+    const manifest = path.join(dir, 'package.json');
+    if (fs.existsSync(manifest)) {
+      const pkg = JSON.parse(fs.readFileSync(manifest, 'utf8'));
+      if (pkg.name === name) return pkg.version;
     }
-    const target = new Uint8Array(20).fill(0xaa);
-    assert.equal(uuid[name]('fixture', uuid[name].DNS, target, 4), target);
-    assert.equal(uuid.stringify(target, 4), uuid[name]('fixture', uuid[name].DNS));
-    assert.deepEqual(target.slice(0, 4), new Uint8Array(4).fill(0xaa));
+    const parent = path.dirname(dir);
+    assert.notEqual(parent, dir, `manifest missing for resolved ${name}`);
+    dir = parent;
+  }
+}
+
+test('installed Kakao public entry exposes the genuine classes and pinned runtime dependencies', async () => {
+  const sdk = await publicSdk();
+  const client = await sdkImport('platforms/kakaotalk/client.js');
+  const credentials = await sdkImport('platforms/kakaotalk/credential-manager.js');
+  const pkg = JSON.parse(fs.readFileSync(sdkPackage, 'utf8'));
+  assert.equal(pkg.name, '@kakao-ai-bridge/kakao-sdk');
+  assert.deepEqual(pkg.dependencies, { bson: '6.10.4', zod: '4.6.5' });
+  assert.equal(dependencyVersion('bson'), '6.10.4');
+  assert.equal(dependencyVersion('zod'), '4.6.5');
+  assert.equal(sdk.KakaoTalkClient, client.KakaoTalkClient);
+  assert.equal(sdk.KakaoTalkError, client.KakaoTalkError);
+  assert.equal(sdk.KakaoCredentialManager, credentials.KakaoCredentialManager);
+  assert.equal(sdk.CredentialManager, sdk.KakaoCredentialManager);
+  for (const name of ['KakaoTalkListener', 'loginFlow', 'refreshKakaoOAuthToken',
+    'classifyKakaoChat', 'planAttachments', 'detectImageDimensions', 'sha1Hex']) {
+    assert.equal(typeof sdk[name], 'function', name);
   }
 });
 
-test('node-jose CommonJS UUID v4 caller and JOSE signing still work', async () => {
-  const ids = Array.from({ length: 32 }, () => uuid.v4());
-  assert.equal(new Set(ids).size, ids.length);
-  assert(ids.every(id => uuid.validate(id) && uuid.version(id) === 4));
-  const key = await jose.JWK.createKeyStore().generate('oct', 256);
-  const token = await jose.JWS.createSign({ format: 'compact', fields: { alg: 'HS256' } }, key)
-    .update('offline dependency fixture', 'utf8').final();
-  const verified = await jose.JWS.createVerify(key).verify(token);
-  assert.equal(verified.payload.toString(), 'offline dependency fixture');
+test('real Kakao Zod schemas preserve record payloads and distinguish history from push events', async () => {
+  const sdk = await publicSdk();
+  const message = {
+    log_id: '9007199254740993', type: 1, author_id: 11, author_name: null,
+    message: '한글 offline fixture', attachment: { extra: { flags: [1, true, null] } }, sent_at: 1700000000,
+  };
+  const page = { messages: [message], next_cursor: message.log_id, complete: false };
+  assert.deepEqual(sdk.KakaoMessagePageSchema.parse(page), page);
+  assert.equal(sdk.KakaoMessagePageSchema.safeParse({ ...page, messages: [{ ...message, log_id: 123 }] }).success, false);
+  const push = {
+    type: 'MSG', chat_id: '9007199254740995', log_id: message.log_id,
+    author_id: message.author_id, author_name: null, message: message.message,
+    message_type: message.type, attachment: message.attachment, sent_at: message.sent_at,
+  };
+  assert.deepEqual(sdk.KakaoTalkPushMessageEventSchema.parse(push), push);
+  const { message_type: omitted, ...withoutMessageType } = push;
+  assert.equal(omitted, 1);
+  assert.equal(sdk.KakaoTalkPushMessageEventSchema.safeParse(withoutMessageType).success, false);
+  assert.equal(sdk.KakaoMessageSchema.safeParse(push).success, false);
+  const saved = account('fixture-primary', '11');
+  const config = { current_account: saved.account_id, accounts: { [saved.account_id]: saved } };
+  assert.deepEqual(sdk.KakaoConfigSchema.parse(config), config);
+  assert.equal(sdk.KakaoAccountCredentialsSchema.safeParse({ ...saved, device_type: 'phone' }).success, false);
+  const snapshot = { chat_id: '42', active_members: 0, members: [], complete: true,
+    consistency_basis: 'stable_double_read_chatinfo_getmem' };
+  assert.deepEqual(sdk.KakaoMemberSnapshotSchema.parse(snapshot), snapshot);
+  assert.equal(sdk.KakaoMemberSnapshotSchema.safeParse({ ...snapshot, complete: false }).success, false);
 });
 
-const wireFixtures = {
-  TBinaryProtocol: '80010001000000076669787475726500000000080001fffffff90b00020000000eed9a8ceab78020666978747572650a0003000000000001e240020004010f0005080000000200000002000000030c00060b0001000000066e6573746564000000',
-  TCompactProtocol: '8221000766697874757265150d180eed9a8ceab78020666978747572651680890f11192504061c18066e6573746564000000',
-};
-for (const [name, expectedHex] of Object.entries(wireFixtures)) {
-  test(`real SDK LINE Thrift ${name} keeps the pre-upgrade wire format`, async () => {
-    const { writeThrift } = await sdkImport('vendor/linejs/base/thrift/readwrite/write.js');
-    const { readThrift } = await sdkImport('vendor/linejs/base/thrift/readwrite/read.js');
-    const value = [[8, 1, -7], [11, 2, '회귀 fixture'], [10, 3, 123456], [2, 4, true], [15, 5, [8, [2, 3]]], [12, 6, [[11, 1, 'nested']]]];
-    const encoded = writeThrift(value, 'fixture', thrift[name]);
-    // Recorded from unmodified agent-messenger@2.38.1 + thrift@0.20.0.
-    assert.equal(Buffer.from(encoded).toString('hex'), expectedHex);
-    assert.deepEqual(readThrift(Buffer.from(expectedHex, 'hex'), thrift[name]), {
-      data: { 1: -7, 2: '회귀 fixture', 3: 123456, 4: true, 5: [2, 3], 6: { 1: 'nested' } },
-      _info: { fname: 'fixture', mtype: 1, rseqid: 0 },
-    });
-  });
+test('real Kakao credentials round-trip privately with account switching and removal', async t => {
+  const { CredentialManager, KakaoConfigSchema } = await publicSdk();
+  const dir = privateDir(t);
+  const manager = new CredentialManager(dir);
+  assert.deepEqual(await manager.load(), { current_account: null, accounts: {} });
+  const primary = account('fixture-primary', '11');
+  const secondary = account('fixture-secondary', '12');
+  await manager.setAccount(primary);
+  await manager.setAccount(secondary);
+  assert.deepEqual(await manager.getAccount(), primary);
+  await manager.setCurrentAccount(secondary.account_id);
+  const reopened = new CredentialManager(dir);
+  assert.deepEqual(await reopened.getAccount(), secondary);
+  assert.deepEqual(await reopened.getAccount(primary.account_id), primary);
+  assert.equal(await reopened.getAccount('fixture-missing'), null);
+  assert.deepEqual((await reopened.listAccounts()).map(({ account_id, is_current }) => [account_id, is_current]),
+    [[primary.account_id, false], [secondary.account_id, true]]);
+  const stored = JSON.parse(fs.readFileSync(path.join(dir, 'kakaotalk-credentials.json'), 'utf8'));
+  assert.deepEqual(KakaoConfigSchema.parse(stored), await reopened.load());
+  assert.equal(fs.statSync(dir).mode & 0o777, 0o700);
+  assert.equal(fs.statSync(path.join(dir, 'kakaotalk-credentials.json')).mode & 0o777, 0o600);
+  await reopened.removeAccount(secondary.account_id);
+  assert.deepEqual(await manager.getAccount(), primary);
+  await reopened.removeAccount(primary.account_id);
+  assert.deepEqual(await manager.load(), { current_account: null, accounts: {} });
+});
 
-  test(`Thrift ${name} rejects excessive skip recursion with a protocol error`, () => {
-    const chunks = [];
-    const transport = new thrift.TBufferedTransport(undefined, bytes => chunks.push(bytes));
-    const writer = new thrift[name](transport);
-    writer.writeStructBegin('root');
-    for (let i = 0; i < 70; i++) {
-      writer.writeFieldBegin('child', thrift.Thrift.Type.STRUCT, 1);
-      writer.writeStructBegin('child');
-    }
-    writer.writeFieldStop();
-    writer.writeStructEnd();
-    for (let i = 0; i < 70; i++) {
-      writer.writeFieldEnd();
-      writer.writeFieldStop();
-      writer.writeStructEnd();
-    }
-    transport.flush();
-    const reader = new thrift[name](new thrift.TFramedTransport(Buffer.concat(chunks)));
-    assert.throws(() => reader.skip(thrift.Thrift.Type.STRUCT), error => {
-      assert.equal(error.name, 'TProtocolException');
-      assert.match(error.message, /Maximum (skip|recursion) depth exceeded/);
-      return true;
-    });
+test('real client dynamically loads ensure-auth from isolated credentials without opening a session', async t => {
+  const { KakaoTalkClient, KakaoTalkError, CredentialManager } = await publicSdk();
+  const dir = privateDir(t);
+  const previous = process.env.AGENT_MESSENGER_CONFIG_DIR;
+  process.env.AGENT_MESSENGER_CONFIG_DIR = dir;
+  t.after(() => { process.env.AGENT_MESSENGER_CONFIG_DIR = previous; });
+  const client = new KakaoTalkClient();
+  t.after(() => client.close());
+  assert.throws(() => client.getCredentials(), error => error instanceof KakaoTalkError && error.code === 'not_authenticated');
+  await assert.rejects(client.login(), /No KakaoTalk credentials found/);
+  const manager = new CredentialManager();
+  const primary = account('fixture-primary', '11');
+  const secondary = account('fixture-secondary', '12');
+  await manager.setAccount(primary);
+  await manager.setAccount(secondary);
+  assert.equal(await client.login(undefined, secondary.account_id), client);
+  assert.deepEqual(client.getCredentials(), {
+    oauthToken: secondary.oauth_token, userId: secondary.user_id,
+    deviceUuid: secondary.device_uuid, deviceType: secondary.device_type,
   });
-}
+  assert.equal(client.isConnected(), false, 'login only installs credentials; no LOCO connection');
+  await client.login();
+  assert.equal(client.getCredentials().userId, primary.user_id);
+  await assert.rejects(client.login(undefined, 'fixture-missing'), /No KakaoTalk credentials found/);
+  await assert.rejects(client.login({ oauthToken: '', userId: '11' }),
+    error => error instanceof KakaoTalkError && error.code === 'missing_token');
+  assert.deepEqual(fs.readdirSync(dir), ['kakaotalk-credentials.json']);
+});
 
-function get(server, requestPath) {
-  return new Promise((resolve, reject) => {
-    const request = http.get({ hostname: '127.0.0.1', port: server.address().port, path: requestPath }, response => {
-      const parts = [];
-      response.on('data', part => parts.push(part));
-      response.on('end', () => resolve({ status: response.statusCode, body: Buffer.concat(parts).toString() }));
-    });
-    request.on('error', reject);
-    request.setTimeout(3000, () => request.destroy(new Error('fixture timeout')));
+test('real Kakao listener preserves BSON Long IDs and emits schema-valid message, emoticon and read events', async () => {
+  const sdk = await publicSdk();
+  const { Long } = sdkRequire('bson');
+  const chatId = '9007199254740993';
+  const logId = '9007199254740995';
+  const listener = new sdk.KakaoTalkListener({
+    lookupAuthorName: (id, authorId) => {
+      assert.equal(id, chatId); assert.equal(authorId, 11); return 'fixture author';
+    },
   });
-}
-
-test('Thrift static server does not expose a prefix-matching sibling directory', async t => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kakao-thrift-regression-'));
-  const publicDir = path.join(dir, 'public');
-  const sibling = path.join(dir, 'public-private');
-  fs.mkdirSync(publicDir); fs.mkdirSync(sibling);
-  fs.writeFileSync(path.join(publicDir, 'ok.txt'), 'public fixture');
-  fs.writeFileSync(path.join(sibling, 'secret.txt'), 'private fixture');
-  const server = thrift.createWebServer({ files: publicDir, services: {}, headers: {} });
-  t.after(async () => {
-    server.closeAllConnections();
-    await new Promise(resolve => server.close(resolve));
-    fs.rmSync(dir, { recursive: true, force: true });
+  const messages = []; const emoticons = []; const reads = [];
+  listener.on('message', value => messages.push(value));
+  listener.on('emoticon', value => emoticons.push(value));
+  listener.on('read', value => reads.push(value));
+  const body = { chatId: Long.fromString(chatId), chatLog: {
+    logId: Long.fromString(logId), authorId: 11, type: 12, message: 'sticker fixture',
+    sendAt: 1700000000, attachment: JSON.stringify({ path: '12345.fixture.png', nested: { ok: true } }),
+  } };
+  listener.handlePush({ method: 'MSG', body });
+  assert.deepEqual(sdk.KakaoTalkPushMessageEventSchema.parse(messages[0]), {
+    type: 'MSG', chat_id: chatId, log_id: logId, author_id: 11, author_name: 'fixture author',
+    message: 'sticker fixture', message_type: 12, attachment: { path: '12345.fixture.png', nested: { ok: true } },
+    sent_at: 1700000000,
   });
-  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
-  assert.deepEqual(await get(server, '/ok.txt'), { status: 200, body: 'public fixture' });
-  for (const requestPath of ['/../public-private/secret.txt', '/%2e%2e/public-private/secret.txt']) {
-    const response = await get(server, requestPath);
-    assert([400, 404].includes(response.status), `${requestPath}: ${response.status}`);
-    assert(!response.body.includes('private fixture'));
+  assert.deepEqual(sdk.KakaoTalkPushEmoticonEventSchema.parse(emoticons[0]), {
+    type: 'EMOTICON', chat_id: chatId, log_id: logId, author_id: 11, author_name: 'fixture author',
+    message_type: 12, emoticon_kind: 'sticker', pack_id: '12345', sticker_path: '12345.fixture.png', sent_at: 1700000000,
+  });
+  for (const attachment of ['not JSON', '[]', '{}', 'null', '']) {
+    listener.handlePush({ method: 'MSG', body: { ...body, chatLog: { ...body.chatLog, type: 1, attachment } } });
+    assert.equal(messages.at(-1).attachment, null);
   }
+  assert.equal(messages.length, 6);
+  assert.equal(emoticons.length, 1);
+  listener.handlePush({ method: 'DECUNREAD', body: { chatId: body.chatId, userId: 11, watermark: body.chatLog.logId } });
+  assert.deepEqual(reads.map(value => sdk.KakaoTalkPushReadEventSchema.parse(value)), [
+    { type: 'DECUNREAD', chat_id: chatId, user_id: 11, watermark: logId },
+  ]);
+});
+
+test('real Kakao listener subscribes once and tears down on kicked or handled startup failure', async () => {
+  const { KakaoTalkListener } = await publicSdk();
+  let acquireCount = 0; let pushRemoved = 0; let sessionRemoved = 0; let emitSession;
+  const client = {
+    onPush: () => () => { pushRemoved++; },
+    onSessionEvent: callback => { emitSession = callback; return () => { sessionRemoved++; }; },
+    isConnected: () => true,
+    acquireSession: async () => { acquireCount++; },
+    getCredentials: () => ({ userId: '11' }),
+  };
+  const listener = new KakaoTalkListener(client);
+  const connected = []; const errors = [];
+  listener.on('connected', event => connected.push(event));
+  listener.on('error', error => errors.push(error.message));
+  await listener.start(); await listener.start();
+  assert.equal(acquireCount, 1);
+  assert.deepEqual(connected, [{ userId: '11' }]);
+  emitSession({ type: 'kicked', reason: 'fixture revoked' });
+  emitSession({ type: 'connected', userId: '12' });
+  listener.stop(); listener.stop();
+  assert.deepEqual(errors, ['fixture revoked']);
+  assert.deepEqual(connected, [{ userId: '11' }]);
+  assert.deepEqual([pushRemoved, sessionRemoved], [1, 1]);
+  const failure = new Error('fixture session unavailable');
+  const failing = new KakaoTalkListener({ ...client, isConnected: () => false,
+    acquireSession: async () => { throw failure; } });
+  const failures = [];
+  failing.on('error', error => failures.push(error));
+  // Upstream start() handles the error and resolves: consumers must observe the
+  // error event, not treat the resolved Promise as proof of a connected session.
+  assert.equal(await failing.start(), undefined);
+  assert.deepEqual(failures, [failure]);
+  failing.stop();
+  assert.deepEqual([pushRemoved, sessionRemoved], [2, 2]);
+});
+
+test('real Kakao media helpers detect offset headers, reject truncation and route attachments without uploading', async t => {
+  const { detectImageDimensions, sha1Hex, resolveAttachment, planAttachments } = await publicSdk();
+  const dir = privateDir(t);
+  const backing = Buffer.alloc(40, 0xaa);
+  const header = backing.subarray(8, 32);
+  Buffer.from('89504e470d0a1a0a', 'hex').copy(header);
+  header.writeUInt32BE(320, 16); header.writeUInt32BE(240, 20);
+  assert.deepEqual(detectImageDimensions(header), { width: 320, height: 240, mimeType: 'image/png' });
+  for (const length of [8, 16, 23]) assert.throws(() => detectImageDimensions(header.subarray(0, length)), /Truncated PNG/);
+  assert.throws(() => detectImageDimensions(Buffer.from('not an image')), /Unsupported image format/);
+  const file = path.join(dir, 'header-fixture.bin');
+  fs.writeFileSync(file, header, { mode: 0o600 });
+  const data = fs.readFileSync(file);
+  assert.equal(await sha1Hex(data), createHash('sha1').update(data).digest('hex').toUpperCase());
+  const photo = { data, filename: 'fixture.bin', mime: 'Image/PNG' };
+  const secondPhoto = { data, filename: 'fixture.PNG' };
+  const document = { data: Buffer.from('offline fixture'), filename: 'fixture.txt' };
+  assert.deepEqual(resolveAttachment(photo), { kind: 'photo', mime: 'image/png', data, filename: photo.filename });
+  assert.deepEqual(planAttachments([photo]), { kind: 'single', resolved: resolveAttachment(photo) });
+  const photos = [photo, secondPhoto];
+  const multi = planAttachments(photos);
+  assert.equal(multi.kind, 'multiphoto');
+  assert.deepEqual(multi.items, photos); assert.notEqual(multi.items, photos);
+  const mixed = planAttachments([photo, document]);
+  assert.equal(mixed.kind, 'sequential');
+  assert.deepEqual(mixed.resolved.map(item => [item.kind, item.mime]), [['photo', 'image/png'], ['file', 'text/plain']]);
+  assert.throws(() => planAttachments([]), /empty attachments array/);
+});
+
+test('real Kakao classification recognizes both OpenChat wire forms and fails closed for unknown string types', async () => {
+  const { classifyKakaoChat, isOpenKakaoChatType } = await publicSdk();
+  for (const type of [2, 13, 14, 15, 16, 'OM', 'OD']) {
+    assert.equal(isOpenKakaoChatType(type), true);
+    assert.equal(classifyKakaoChat({ type, active_members: 2 }), 'open');
+  }
+  for (const type of [11, 'DirectChat']) {
+    assert.equal(isOpenKakaoChatType(type), false);
+    assert.equal(classifyKakaoChat({ type, active_members: 2 }), 'dm');
+  }
+  for (const type of [10, 'MultiChat']) assert.equal(classifyKakaoChat({ type, active_members: 3 }), 'group');
+  assert.equal(classifyKakaoChat({ type: 'future-protocol-type', active_members: 2 }), 'unknown');
 });
 
 test('actual pinned Kakao LOCO BSON, RSA-OAEP and AES-GCM retain their contracts', async () => {

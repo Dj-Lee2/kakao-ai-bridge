@@ -1,0 +1,24 @@
+{
+  "name": "@kakao-ai-bridge/kakao-sdk",
+  "version": "2.38.1-kakao.1",
+  "private": true,
+  "description": "Unmodified KakaoTalk-only runtime subset of agent-messenger 2.38.1; not the full upstream SDK",
+  "type": "module",
+  "license": "SEE LICENSE IN UPSTREAM-LICENSE.md",
+  "engines": {
+    "node": ">=22.13.0 <25"
+  },
+  "exports": {
+    ".": "./dist/src/platforms/kakaotalk/index.js",
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "bson": "6.10.4",
+    "zod": "4.6.5"
+  },
+  "upstream": {
+    "name": "agent-messenger",
+    "version": "2.38.1",
+    "sha256": "e72b7af4ad4a61c6263c9814438019ae043a1a339520addfddfa9591b5e4e22a"
+  }
+}

@@ -1,0 +1,651 @@
+<div align="center">
+
+# Agent Messenger
+
+[![npm](https://img.shields.io/npm/v/agent-messenger?color=E67E22)](https://www.npmjs.com/package/agent-messenger) [![platform](https://img.shields.io/badge/platform-slack-4A154B)](https://agent-messenger.dev/docs/cli/slack) [![platform](https://img.shields.io/badge/platform-discord-5865F2)](https://agent-messenger.dev/docs/cli/discord) [![platform](https://img.shields.io/badge/platform-teams-6264A7)](https://agent-messenger.dev/docs/cli/teams) [![platform](https://img.shields.io/badge/platform-webex-00BCF2)](https://agent-messenger.dev/docs/cli/webex) [![platform](https://img.shields.io/badge/platform-telegram-2AABEE)](https://agent-messenger.dev/docs/cli/telegram) [![platform](https://img.shields.io/badge/platform-whatsapp-25D366)](https://agent-messenger.dev/docs/cli/whatsapp) [![platform](https://img.shields.io/badge/platform-line-06C755)](https://agent-messenger.dev/docs/cli/line) [![platform](https://img.shields.io/badge/platform-wechat-07C160)](https://agent-messenger.dev/docs/cli/wechatbot) [![platform](https://img.shields.io/badge/platform-imessage-007AFF)](https://agent-messenger.dev/docs/cli/imessage) [![platform](https://img.shields.io/badge/platform-instagram-E4405F)](https://agent-messenger.dev/docs/cli/instagram) [![platform](https://img.shields.io/badge/platform-kakaotalk-FEE500)](https://agent-messenger.dev/docs/cli/kakaotalk) [![platform](https://img.shields.io/badge/platform-channel_talk-3B3FE4)](https://agent-messenger.dev/docs/cli/channeltalk)
+
+**Your agent messages as you — not as a bot**
+
+</div>
+
+One CLI for Slack, Discord, Teams, Webex, Telegram, WhatsApp, LINE, WeChat, iMessage, Instagram, KakaoTalk, and Channel Talk. Credentials extracted from desktop apps and browsers, or authenticated in seconds — no API keys, no OAuth, no admin approval. TypeScript SDK included.
+
+> [!TIP]
+> 🎉 Agent Messenger powers multi-channel messaging in [TypeClaw](https://github.com/typeclaw/typeclaw), a TypeScript-native agent runtime.
+
+## Table of Contents
+
+- [Why Agent Messenger?](#why-agent-messenger)
+- [Installation](#installation)
+- [Agent Skills](#agent-skills)
+  - [SkillPad](#skillpad)
+  - [Skills CLI](#skills-cli)
+  - [Claude Code Plugin](#claude-code-plugin)
+- [Quick Start](#quick-start)
+- [SDK](#sdk)
+- [TUI (Experimental)](#tui-experimental)
+- [Supported Platforms](#supported-platforms)
+- [Platform Guides](#platform-guides)
+- [Use Cases](#use-cases)
+  - [Gathering Context](#gathering-context)
+  - [Communicating & Reporting](#communicating--reporting)
+  - [Automation & Pipelines](#automation--pipelines)
+  - [...and More](#and-more)
+- [Philosophy](#philosophy)
+- [Contributing](#contributing)
+- [Star History](#star-history)
+- [Thanks](#thanks)
+- [License](#license)
+
+## Why Agent Messenger?
+
+**You shouldn't need a bot token to send a message.**
+
+Every platform gates API access behind OAuth apps that need admin approval — days of waiting just to send a message. And even then, your agent is a **bot**, not you. Different name, different permissions, different context.
+
+Agent Messenger reads session tokens from your Slack, Discord, Teams, KakaoTalk, or Channel Talk desktop app — zero config. If the desktop app isn't installed, it falls back to extracting from Chromium browsers, with `auth extract --browser-profile <path>` for custom Chromium profile locations. Webex and Instagram tokens are extracted directly from browsers. Telegram authenticates with a one-time phone code, and WhatsApp with a QR code or pairing code. Either way, your agent operates **as you** — same name, same permissions, same context. Bot tokens are fully supported too for server-side and CI/CD use cases.
+
+> [!TIP]
+> **For Slack and Discord, QR code sign-in (`auth qr`) is the recommended way to authenticate** — it's the safest and most reliable method. It signs you in through the platform's own login flow instead of reading credentials off disk, and works even without the desktop app. See the [Slack](skills/agent-slack/references/authentication.md) and [Discord](skills/agent-discord/references/authentication.md) auth guides.
+
+- **QR Code Sign-In (Slack & Discord)** — The recommended, safest auth: sign in through the platform's official flow, no credential extraction and no desktop app required (Discord scans with the mobile app)
+- **Auto-Extract Auth** — Reads tokens from Slack, Discord, Teams, KakaoTalk, and Channel Talk desktop apps, with browser fallback and custom Chromium profile paths via `--browser-profile`. Webex and Instagram tokens extracted from Chromium browsers. Telegram and WhatsApp authenticate with a one-time code — still under a minute
+- **Act As Yourself** — Extracts your user session — not a bot token. Your agent sends messages, reacts, and searches as you. Need bot mode? Bot CLIs are included too
+- **One Interface** — Consistent command style across 12 platforms for supported actions (e.g. message send, message search, channel list, snapshot). Learn once
+- **Agent-Native Output** — JSON by default for LLM tool use. `--pretty` for human-readable. Structured output your agent can parse and act on
+- **Token Efficient** — CLI, not MCP. One skill file, one shell command per action. No server to run, no tool registration. ([Why not MCP?](#philosophy))
+- **Persistent Memory** — Stores workspace IDs, channel mappings, and preferences in ~/.config so your agent never asks twice
+- **TypeScript SDK** — Import clients directly into your app. Full type safety with Zod schemas
+
+## Installation
+
+**CLI** (global install for terminal / AI agent use):
+
+```bash
+npm install -g agent-messenger
+```
+
+**SDK** (project dependency for programmatic use):
+
+```bash
+npm install agent-messenger
+```
+
+The global install gives you all platform CLIs. The project install gives you both CLIs and the TypeScript SDK.
+
+This installs:
+
+- `agent-slack` — Slack CLI (user token, zero-config, or QR code sign-in)
+- `agent-slackbot` — Slack Bot CLI (bot token, for server-side/CI/CD)
+- `agent-discord` — Discord CLI (token extraction, or QR code sign-in via the mobile app)
+- `agent-discordbot` — Discord Bot CLI (bot token, for server-side/CI/CD)
+- `agent-teams` — Microsoft Teams CLI
+- `agent-webex` — Cisco Webex CLI (browser token extraction with e2e encryption + OAuth Device Grant, zero-config)
+- `agent-webexbot` — Webex Bot CLI (bot token, for server-side/CI/CD with real-time Mercury WebSocket listener)
+- `agent-telegram` — Telegram CLI (user account via TDLib)
+- `agent-telegrambot` — Telegram Bot CLI (bot token, for server-side/CI/CD)
+- `agent-whatsapp` — WhatsApp CLI (user account via Baileys, QR code or pairing code auth)
+- `agent-whatsappbot` — WhatsApp Bot CLI (Cloud API, for server-side/CI/CD)
+- `agent-line` — LINE CLI (QR code login, Thrift protocol)
+- `agent-wechatbot` — WeChat Bot CLI (Official Account API, for server-side/CI/CD)
+- `agent-imessage` — iMessage CLI (runs on a Mac via the [imsg](https://github.com/openclaw/imsg) tool)
+- `agent-instagram` — Instagram DM CLI (browser cookie extraction + username/password auth)
+- `agent-kakaotalk` — KakaoTalk CLI (sub-device login, LOCO protocol)
+- `agent-channeltalk` — Channel Talk CLI (beta, zero-config, extracted cookies)
+- `agent-channeltalkbot` — Channel Talk Bot CLI (beta, API credentials, for server-side/CI/CD)
+
+## Agent Skills
+
+Agent Messenger includes [Agent Skills](https://agentskills.io/) that teach your AI agent how to use each CLI above. One skill per CLI — install only what you need.
+
+### SkillPad
+
+SkillPad is a GUI app for Agent Skills. See [skillpad.dev](https://skillpad.dev/) for more details.
+
+[![Available on SkillPad](https://badge.skillpad.dev/agent-slack/dark.svg)](https://skillpad.dev/install/agent-messenger/agent-messenger/agent-slack) [![Available on SkillPad](https://badge.skillpad.dev/agent-slackbot/dark.svg)](https://skillpad.dev/install/agent-messenger/agent-messenger/agent-slackbot) [![Available on SkillPad](https://badge.skillpad.dev/agent-discord/dark.svg)](https://skillpad.dev/install/agent-messenger/agent-messenger/agent-discord) [![Available on SkillPad](https://badge.skillpad.dev/agent-discordbot/dark.svg)](https://skillpad.dev/install/agent-messenger/agent-messenger/agent-discordbot) [![Available on SkillPad](https://badge.skillpad.dev/agent-teams/dark.svg)](https://skillpad.dev/install/agent-messenger/agent-messenger/agent-teams) [![Available on SkillPad](https://badge.skillpad.dev/agent-webex/dark.svg)](https://skillpad.dev/install/agent-messenger/agent-messenger/agent-webex) [![Available on SkillPad](https://badge.skillpad.dev/agent-webexbot/dark.svg)](https://skillpad.dev/install/agent-messenger/agent-messenger/agent-webexbot) [![Available on SkillPad](https://badge.skillpad.dev/agent-telegram/dark.svg)](https://skillpad.dev/install/agent-messenger/agent-messenger/agent-telegram) [![Available on SkillPad](https://badge.skillpad.dev/agent-telegrambot/dark.svg)](https://skillpad.dev/install/agent-messenger/agent-messenger/agent-telegrambot) [![Available on SkillPad](https://badge.skillpad.dev/agent-whatsapp/dark.svg)](https://skillpad.dev/install/agent-messenger/agent-messenger/agent-whatsapp) [![Available on SkillPad](https://badge.skillpad.dev/agent-whatsappbot/dark.svg)](https://skillpad.dev/install/agent-messenger/agent-messenger/agent-whatsappbot) [![Available on SkillPad](https://badge.skillpad.dev/agent-line/dark.svg)](https://skillpad.dev/install/agent-messenger/agent-messenger/agent-line) [![Available on SkillPad](https://badge.skillpad.dev/agent-wechatbot/dark.svg)](https://skillpad.dev/install/agent-messenger/agent-messenger/agent-wechatbot) [![Available on SkillPad](https://badge.skillpad.dev/agent-imessage/dark.svg)](https://skillpad.dev/install/agent-messenger/agent-messenger/agent-imessage) [![Available on SkillPad](https://badge.skillpad.dev/agent-instagram/dark.svg)](https://skillpad.dev/install/agent-messenger/agent-messenger/agent-instagram) [![Available on SkillPad](https://badge.skillpad.dev/agent-kakaotalk/dark.svg)](https://skillpad.dev/install/agent-messenger/agent-messenger/agent-kakaotalk) [![Available on SkillPad](https://badge.skillpad.dev/agent-channeltalk/dark.svg)](https://skillpad.dev/install/agent-messenger/agent-messenger/agent-channeltalk) [![Available on SkillPad](https://badge.skillpad.dev/agent-channeltalkbot/dark.svg)](https://skillpad.dev/install/agent-messenger/agent-messenger/agent-channeltalkbot)
+
+### Skills CLI
+
+Skills CLI is a CLI tool for Agent Skills. See [skills.sh](https://skills.sh/) for more details.
+
+```bash
+npx -y skills add agent-messenger/agent-messenger
+```
+
+### Claude Code Plugin
+
+```bash
+claude plugin marketplace add agent-messenger/agent-messenger
+claude plugin install agent-messenger
+```
+
+Or within Claude Code:
+
+```
+/plugin marketplace add agent-messenger/agent-messenger
+/plugin install agent-messenger
+```
+
+## Quick Start
+
+Get up and running in 30 seconds:
+
+```bash
+# 1. See your workspace at a glance
+agent-slack snapshot --pretty
+
+# 2. Send a message
+agent-slack message send general "Hello from the CLI!"
+```
+
+That's it. Credentials are extracted automatically from your Slack desktop app on first run. No OAuth flows. No API tokens. No configuration files.
+
+> **No desktop app?** QR code sign-in is the recommended way to authenticate Slack and Discord. In Slack, open "Sign in on mobile", copy the QR image, and pipe it in; in Discord, scan the printed QR with the mobile app:
+>
+> ```bash
+> pbpaste | agent-slack auth qr   # paste Slack's "Sign in on mobile" QR
+> agent-discord auth qr           # scan the printed QR with the Discord app
+> ```
+
+### Custom config directory
+
+By default, Agent Messenger stores credentials, sync state, and derived-key caches under `~/.config/agent-messenger`. To relocate everything (e.g. for CI sandboxes, multi-tenant setups, or non-default home directories), set the `AGENT_MESSENGER_CONFIG_DIR` environment variable:
+
+```bash
+export AGENT_MESSENGER_CONFIG_DIR="$HOME/.local/share/agent-messenger"
+agent-slack auth extract
+```
+
+The variable is read on every CLI/SDK invocation and applies to all platforms (Slack, Discord, Teams, Webex, Telegram, WhatsApp, LINE, WeChat, iMessage, Instagram, KakaoTalk, Channel Talk, and their bot variants). Explicit `configDir` arguments to credential managers still take precedence.
+
+## Telegram Quick Start
+
+Get up and running with Telegram in a minute:
+
+```bash
+bunx --package agent-messenger agent-telegram auth login
+
+# Send a message
+bunx --package agent-messenger agent-telegram message send <chat-id-or-@username> "Hello from the CLI!"
+```
+
+The CLI automatically provisions API credentials via my.telegram.org if needed. For CI/CD, set `AGENT_TELEGRAM_API_ID` and `AGENT_TELEGRAM_API_HASH` environment variables.
+
+## SDK
+
+Use Agent Messenger as a TypeScript library. Each platform exports a typed client, credential manager, types, and Zod schemas.
+
+### Quick Example
+
+```typescript
+import { SlackClient } from 'agent-messenger/slack'
+
+const slack = await new SlackClient().login()
+const channels = await slack.listChannels()
+await slack.sendMessage(channels[0].id, 'Hello from the SDK!')
+```
+
+Credentials are resolved the same way as the CLI — auto-extracted from your desktop apps. Call `.login()` with no arguments for auto-extraction, or pass credentials explicitly:
+
+```typescript
+const slack = await new SlackClient().login({ token: 'xoxc-...', cookie: 'xoxd-...' })
+```
+
+### Available Imports
+
+| Import Path | Client |
+| --- | --- |
+| `agent-messenger/slack` | `SlackClient` |
+| `agent-messenger/slackbot` | `SlackBotClient` |
+| `agent-messenger/discord` | `DiscordClient` |
+| `agent-messenger/discordbot` | `DiscordBotClient` |
+| `agent-messenger/teams` | `TeamsClient` |
+| `agent-messenger/webex` | `WebexClient` |
+| `agent-messenger/webexbot` | `WebexBotClient` |
+| `agent-messenger/telegrambot` | `TelegramBotClient` |
+| `agent-messenger/whatsapp` | `WhatsAppClient` |
+| `agent-messenger/whatsappbot` | `WhatsAppBotClient` |
+| `agent-messenger/line` | `LineClient` |
+| `agent-messenger/wechatbot` | `WeChatBotClient` |
+| `agent-messenger/imessage` | `ImsgClient` |
+| `agent-messenger/instagram` | `InstagramClient` |
+| `agent-messenger/kakaotalk` | `KakaoTalkClient` |
+| `agent-messenger/channeltalk` | `ChannelClient` |
+| `agent-messenger/channeltalkbot` | `ChannelBotClient` |
+
+Each module also exports its credential manager, Zod schemas, and TypeScript types (except `imessage`, which exports its client, credential manager, and TypeScript types — no Zod schemas):
+
+```typescript
+import { SlackClient, SlackCredentialManager, SlackMessageSchema } from 'agent-messenger/slack'
+import type { SlackMessage, SlackChannel } from 'agent-messenger/slack'
+```
+
+### Manual Credential Setup
+
+Every client supports `.login()` with explicit credentials for advanced use cases:
+
+```typescript
+import { SlackClient } from 'agent-messenger/slack'
+
+const client = await new SlackClient().login({ token: 'xoxc-...', cookie: 'xoxd-...' })
+const messages = await client.getMessages('C01234567')
+```
+
+### Editing Messages
+
+Clients that support message editing expose an `editMessage` method (matching each platform's API, Slack/SlackBot use `updateMessage` and TelegramBot uses `editMessageText`). You can only edit your own messages, subject to each platform's edit window.
+
+```typescript
+import { DiscordClient } from 'agent-messenger/discord'
+
+const discord = await new DiscordClient().login()
+const msg = await discord.sendMessage(channelId, 'Deploying…')
+await discord.editMessage(channelId, msg.id, 'Deployed ✅')
+```
+
+### Unread Mentions (Discord)
+
+`getUnreadMentions` returns only the mentions behind Discord's unread-mention badge by correlating your recent mention history (Discord's 7-day window) with per-channel read state. `count` is the enumerated unread mentions, `badgeCount` is Discord's account-wide badge total, and `complete` is `true` when the scan exhausted all available mention history and `false` when it stopped early due to the limit or a non-advancing cursor.
+
+```typescript
+import { DiscordClient } from 'agent-messenger/discord'
+
+const discord = await new DiscordClient().login()
+const { mentions, count, badgeCount, complete } = await discord.getUnreadMentions()
+```
+
+### Unread DMs (Discord)
+
+Mention history only records server mentions, so DMs never appear in `getUnreadMentions`. `getUnreadDMs` covers them by comparing each DM and group-DM channel's `last_message_id` against its read marker. Each channel's `unreadCount` is Discord's own badge counter — `null` when the channel has no read-state entry (count unknown, still reported as unread) and `0` when the DM is muted. `count` and `totalUnread` describe every unread DM found, so they stay accurate when `limit` caps the returned list. `complete` is `false` when Discord delivered a partial read state, in which case never-opened DMs may be missing from the result.
+
+```typescript
+import { DiscordClient } from 'agent-messenger/discord'
+
+const discord = await new DiscordClient().login()
+const { channels, count, totalUnread, complete } = await discord.getUnreadDMs()
+```
+
+### QR Code Login (Slack)
+
+Sign in with a QR code from Slack's "Sign in on mobile" screen — no desktop app or browser automation, just HTTP. `dataUrl` is the QR image as a `data:image/png;base64,...` string.
+
+```typescript
+import { loginWithQr, SlackClient } from 'agent-messenger/slack'
+
+const session = await loginWithQr(dataUrl)
+const client = await new SlackClient().login({ token: session.token, cookie: session.cookie })
+```
+
+### QR Code Login (Discord)
+
+Sign in by scanning a QR code with the Discord mobile app — no desktop app or browser token extraction required. `loginWithRemoteAuth` runs Discord's Remote Auth protocol and hands you a QR URL to display; once the user scans and confirms on their phone, you receive the user token.
+
+```typescript
+import { DiscordClient, loginWithRemoteAuth } from 'agent-messenger/discord'
+
+const session = await loginWithRemoteAuth({
+  onQrUrl: (url) => {
+    // Render this URL as a QR code (e.g. with the `qrcode` package)
+    console.log('Scan this with the Discord mobile app:', url)
+  },
+})
+const client = await new DiscordClient().login({ token: session.token })
+```
+
+### Real-time Events (Slack)
+
+```typescript
+import { SlackClient, SlackListener } from 'agent-messenger/slack'
+
+const client = await new SlackClient().login()
+const listener = new SlackListener(client)
+listener.on('message', (event) => {
+  console.log(`New message in ${event.channel}: ${event.text}`)
+})
+await listener.start()
+```
+
+### Real-time Events (Webex)
+
+Stream Webex messages, memberships, attachment actions, and room events over Mercury WebSocket.
+
+```typescript
+import { WebexClient, WebexListener } from 'agent-messenger/webex'
+
+const client = await new WebexClient().login()
+const listener = new WebexListener(client)
+
+listener.on('message_created', (event) => {
+  console.log(`New message in ${event.roomId}: ${event.text}`)
+})
+
+listener.on('membership_created', (event) => {
+  console.log(`Membership changed in ${event.roomId}: ${event.personId}`)
+})
+
+await listener.start()
+```
+
+### Real-time Events (Teams)
+
+Stream Teams chat messages in real time over Teams' internal trouter WebSocket — as a user, with no bot registration and no public HTTP endpoint. Requires the Teams desktop app to be logged in (the listener reuses your extracted session credentials).
+
+```typescript
+import { TeamsClient, TeamsListener } from 'agent-messenger/teams'
+
+const client = await new TeamsClient().login()
+const listener = new TeamsListener(client)
+
+listener.on('message', async (message) => {
+  console.log(`New message in ${message.chatId}: ${message.content}`)
+
+  // Channel messages carry team/channel context and parsed @mentions, so you
+  // can reply into the channel or act on who was mentioned.
+  if (message.conversationType === 'channel') {
+    for (const mention of message.mentions) {
+      console.log(`Mentioned: ${mention.displayName} (${mention.mri})`)
+    }
+    await client.sendMessage(message.teamId!, message.channelId!, 'On it 👍')
+  }
+})
+
+await listener.start()
+```
+
+Each `message` is a `TeamsRealtimeMessage`: `conversationType` is `'chat'` or `'channel'`, `teamId`/`channelId` are set for channel messages, and `mentions` is always present (empty for messages with no `@mentions`).
+
+### Real-time Events (KakaoTalk)
+
+```typescript
+import { KakaoTalkClient, KakaoTalkListener } from 'agent-messenger/kakaotalk'
+
+const client = await new KakaoTalkClient().login()
+const listener = new KakaoTalkListener(client)
+listener.on('message', (event) => {
+  console.log(`New message in ${event.chat_id}: ${event.message}`)
+})
+listener.on('emoticon', (event) => {
+  console.log(`Sticker (${event.emoticon_kind}) in ${event.chat_id}: ${event.sticker_path}`)
+})
+await listener.start()
+```
+
+### Real-time Events (Discord Bot)
+
+Stream messages, reactions, and slash command interactions directly from Discord's Gateway WebSocket — no public HTTP endpoint required.
+
+```typescript
+import { DiscordBotClient, DiscordBotListener, DiscordIntent } from 'agent-messenger/discordbot'
+
+const client = await new DiscordBotClient().login({ token: 'YOUR_BOT_TOKEN' })
+const listener = new DiscordBotListener(client, {
+  // Privileged intents (MessageContent, GuildMembers, GuildPresences) must be enabled
+  // in the Discord Developer Portal before they can be used.
+  intents: DiscordIntent.Guilds | DiscordIntent.GuildMessages | DiscordIntent.MessageContent,
+})
+
+listener.on('message_create', (event) => {
+  console.log(`New message in ${event.channel_id}: ${event.content}`)
+})
+
+listener.on('interaction_create', (event) => {
+  const name = (event.data as { name?: string } | undefined)?.name
+  console.log(`Slash command received: ${name}`)
+})
+
+await listener.start()
+```
+
+### Real-time Events (Telegram Bot)
+
+Stream messages, callback queries, and other updates via long-polling — no public HTTPS endpoint required. Telegram Bot API does not support WebSockets, so the listener uses `getUpdates` long-polling, which is the canonical approach used by frameworks like grammy and telegraf.
+
+```typescript
+import { TelegramBotClient, TelegramBotListener } from 'agent-messenger/telegrambot'
+
+const client = await new TelegramBotClient().login({ token: 'YOUR_BOT_TOKEN' })
+const listener = new TelegramBotListener(client, {
+  allowedUpdates: ['message', 'callback_query'],
+})
+
+listener.on('message', (message) => {
+  console.log(`New message in ${message.chat.id}: ${message.text}`)
+})
+
+listener.on('callback_query', (query) => {
+  console.log(`Button clicked: ${query.data}`)
+})
+
+await listener.start()
+```
+
+### Real-time Events (Slack Bot)
+
+Stream Events API events, slash commands, and interactive components over Slack's Socket Mode WebSocket — no public HTTP endpoint required. Requires an app-level token (`xapp-...`) with the `connections:write` scope, separate from your bot token.
+
+```typescript
+import { SlackBotClient, SlackBotListener } from 'agent-messenger/slackbot'
+
+const client = await new SlackBotClient().login({ token: 'xoxb-...' })
+const listener = new SlackBotListener(client, {
+  appToken: process.env.SLACK_APP_TOKEN!, // xapp-...
+})
+
+listener.on('message', ({ ack, event }) => {
+  ack()
+  console.log(`New message in ${event.channel}: ${event.text}`)
+})
+
+listener.on('slash_commands', ({ ack, body }) => {
+  ack({ text: `Got \`${body.command} ${body.text}\`` })
+})
+
+await listener.start()
+```
+
+### Real-time Events (Instagram)
+
+Stream Instagram DMs in real time over Instagram's MQTToT transport (a persistent TLS connection to `edge-mqtt.facebook.com`), with automatic fallback to polling if the connection can't be established.
+
+```typescript
+import { InstagramClient, InstagramHybridListener } from 'agent-messenger/instagram'
+
+const client = await new InstagramClient().login()
+const listener = new InstagramHybridListener(client)
+
+listener.on('message', (msg) => {
+  if (msg.is_outgoing) return
+  console.log(`New DM in ${msg.thread_id}: ${msg.text}`)
+})
+
+listener.on('connected', ({ userId, transport }) => {
+  console.log(`Listening as ${userId} via ${transport}`)
+})
+
+await listener.start()
+```
+
+## TUI (Experimental)
+
+A unified terminal interface for all your messaging platforms in one screen. Navigate between Slack, Discord, Teams, Webex, Telegram, WhatsApp, iMessage, LINE, Instagram, KakaoTalk, and Channel Talk — all from your terminal.
+
+> **Note**: The TUI is a showcase of what's possible with Agent Messenger's SDK. It demonstrates the power of having a unified adapter layer across all platforms.
+
+```bash
+agent-messenger tui
+```
+
+![Agent Messenger TUI](docs/public/tui.png)
+
+Key features:
+- **Multi-platform** — All 11 platforms in one sidebar, auto-login on startup
+- **Real-time messages** — Live message streaming for supported platforms
+- **Fuzzy pickers** — `Ctrl+K` for channels, `Ctrl+W` for workspaces
+- **Interactive auth** — Authenticate platforms that aren't set up yet, right in the TUI
+
+See the [TUI docs](https://agent-messenger.dev/docs/tui) for keybindings, architecture, and more.
+
+## Supported Platforms
+
+| Feature                    | Slack | Discord | Teams | Webex | Telegram | WhatsApp | LINE  | WeChat | Instagram | KakaoTalk | Channel Talk (beta) |
+| -------------------------- | :---: | :-----: | :---: | :---: | :------: | :------: | :---: | :----: | :-------: | :-------: | :-----------------: |
+| Auto credential extraction |  ✅   |   ✅    |  ✅   |  ✅   |    —     |    —     |   —   |   —    |    ✅     |    ✅     |         ✅          |
+| Send & list messages       |  ✅   |   ✅    |  ✅   |  ✅   |    ✅     |    ✅     |  ✅   |   —    |    ✅     |    ✅     |         ✅          |
+| Direct messages            |  ✅   |   ✅    |  ✅   |  ✅   |    ✅     |    ✅     |  ✅   |   ✅    |    ✅     |    ✅     |         ✅          |
+| Search messages            |  ✅   |   ✅    |   —   |   —   |    —     |    ✅     |   —   |   —    |    ✅     |    —      |         ✅          |
+| Message edit               |  ✅   |   ✅    |  ✅¹  |  ✅   |    —     |    —     |   —   |   —    |     —     |    —      |         —           |
+| Threads                    |  ✅   |   ✅    |   —   |   —   |    —     |    —     |   —   |   —    |     —     |    —      |         —           |
+| Channels & Users           |  ✅   |   ✅    |  ✅   |  ✅   | partial  |    —     |  ✅   |   ✅    |     —     |    —      |         ✅          |
+| Reactions                  |  ✅   |   ✅    |  ✅   |   —   |    —     |    ✅     |   —   |   —    |     —     |    —      |         —           |
+| Custom emoji & stickers    | partial³ |   ✅    |   —   |   —   |    —     |    —     |   —   |   —    |     —     |    —      |         —           |
+| File uploads               |  ✅   |   ✅    |  ✅   |  ✅   |    —     |    —     |   —   |   —    |     —     |    ✅     |         —           |
+| File downloads             |  ✅   |    —    |   —   |  ✅   |    —     |    —     |   —   |   —    |     —     |    —      |         —           |
+| Workspace snapshots        |  ✅   |   ✅    |  ✅   |  ✅   |    —     |    —     |   —   |   —    |     —     |    —      |         ✅          |
+| Multi-workspace / account  |  ✅   |   ✅    |  ✅   |   —   |    ✅     |    ✅     |  ✅   |   ✅    |    ✅     |    ✅     |         ✅          |
+| Activity feed              |  ✅   |    —    |   —   |   —   |    —     |    —     |   —   |   —    |     —     |    —      |         —           |
+| Drafts                     |  ✅   |    —    |   —   |   —   |    —     |    —     |   —   |   —    |     —     |    —      |         —           |
+| Saved items                |  ✅   |    —    |   —   |   —   |    —     |    —     |   —   |   —    |     —     |    —      |         —           |
+| Unread messages            |  ✅   |   ✅²   |   —   |   —   |    —     |    —     |   —   |   —    |     —     |    —      |         —           |
+| Sidebar sections           |  ✅   |    —    |   —   |   —   |    —     |    —     |   —   |   —    |     —     |    —      |         —           |
+| Pins & bookmarks           |  ✅   |    —    |   —   |   —   |    —     |    —     |   —   |   —    |     —     |    —      |         —           |
+| Scheduled messages         |  ✅   |    —    |   —   |   —   |    —     |    —     |   —   |   —    |     —     |    —      |         —           |
+| Channel management         |  ✅   |    —    |   —   |   —   |    —     |    —     |   —   |   —    |     —     |    —      |         —           |
+| Reminders                  |  ✅   |    —    |   —   |   —   |    —     |    —     |   —   |   —    |     —     |    —      |         —           |
+| User groups                |  ✅   |    —    |   —   |   —   |    —     |    —     |   —   |   —    |     —     |    —      |         —           |
+| Real-time events (SDK)     |  ✅   |    ✅    |  ✅   |  ✅   |    —     |    —     |  ✅   |   —    |    ✅     |    ✅      |         —           |
+| Bot support                |  ✅   |   ✅    |   —   |  ✅   |    ✅     |    ✅     |   —   |   ✅    |     —     |    —      |         ✅          |
+
+> ⚠️ **Teams tokens expire in 60-90 minutes.** Re-run `agent-teams auth extract` to refresh. See [Teams Guide](skills/agent-teams/SKILL.md) for details.
+
+> ¹ **Teams message edit** applies to chats/DMs only. Channel messages are not editable through the internal API this client uses.
+
+> ² **Discord unread** covers unread **mentions** in servers (`agent-discord mention unread`, correlating your last 7 days of mention history with per-channel read state) and unread **DMs** (`agent-discord dm unread`, comparing each DM channel's latest message against its read marker). Unread non-mention messages in server channels are not covered.
+>
+> ³ **Slack custom emoji** is read-only (`agent-slack emoji list`). Discord covers
+> both custom emoji and stickers end to end — list, upload and delete.
+> Uploading needs `CREATE_GUILD_EXPRESSIONS`; deleting someone else's
+> expression needs `MANAGE_GUILD_EXPRESSIONS`.
+
+> 💬 **iMessage** is supported via the local [imsg](https://github.com/openclaw/imsg) tool (`agent-imessage`), not the table above. It runs **on a Mac** (Apple has no API). v1 covers send & list messages, direct & group chats, chat listing, real-time watch, and standard tapbacks. Typing, edit/unsend, group management, and targeted/custom reactions require imsg's bridge (SIP disabled) and are a later tier. See the [iMessage Guide](skills/agent-imessage/SKILL.md).
+
+## Platform Guides
+
+- **[Slack Guide](https://agent-messenger.dev/docs/cli/slack)** — Full command reference for Slack
+- **[Slack Bot Guide](https://agent-messenger.dev/docs/cli/slackbot)** — Bot token integration for server-side and CI/CD
+- **[Discord Guide](https://agent-messenger.dev/docs/cli/discord)** — Full command reference for Discord
+- **[Discord Bot Guide](https://agent-messenger.dev/docs/cli/discordbot)** — Bot token integration for server-side and CI/CD
+- **[Teams Guide](https://agent-messenger.dev/docs/cli/teams)** — Full command reference for Microsoft Teams
+- **[Webex Guide](skills/agent-webex/SKILL.md)** — Browser token extraction, OAuth Device Grant auth, and Cisco Webex command reference
+- **[Webex Bot Guide](https://agent-messenger.dev/docs/cli/webexbot)** — Bot token integration for server-side and CI/CD with real-time Mercury WebSocket listener
+- **[Telegram Guide](https://agent-messenger.dev/docs/cli/telegram)** — TDLib setup and Telegram command reference
+- **[Telegram Bot Guide](https://agent-messenger.dev/docs/cli/telegrambot)** — Bot token integration for server-side and CI/CD
+- **[WhatsApp Guide](https://agent-messenger.dev/docs/cli/whatsapp)** — Baileys-based WhatsApp integration via QR code or pairing code
+- **[WhatsApp Bot Guide](https://agent-messenger.dev/docs/cli/whatsappbot)** — Cloud API integration for WhatsApp Business
+- **[LINE Guide](https://agent-messenger.dev/docs/cli/line)** — QR code login and Thrift protocol integration
+- **[WeChat Bot Guide](https://agent-messenger.dev/docs/cli/wechatbot)** — Official Account API integration for WeChat
+- **[iMessage Guide](skills/agent-imessage/SKILL.md)** — iMessage on a Mac via the imsg tool
+- **[Instagram Guide](https://agent-messenger.dev/docs/cli/instagram)** — Browser cookie extraction and Instagram DM integration
+- **[KakaoTalk Guide](https://agent-messenger.dev/docs/cli/kakaotalk)** — Sub-device login and LOCO protocol integration
+- **[Channel Talk Guide](https://agent-messenger.dev/docs/cli/channeltalk)** — Full command reference for Channel Talk (beta, zero-config)
+- **[Channel Talk Bot Guide](https://agent-messenger.dev/docs/cli/channeltalkbot)** — Bot API integration for Channel Talk (beta)
+
+### iMessage is different
+
+Most agent-messenger platforms run anywhere. **iMessage is the exception:** Apple provides no API, so `agent-imessage` runs **on a Mac** and drives Messages locally through the [imsg](https://github.com/openclaw/imsg) tool. You still act as yourself with your own Apple ID and run one shell command per action, but the agent must run on the Mac (imsg is local-only — no network or server) with Full Disk Access and Automation granted. See the [setup guide](skills/agent-imessage/references/setup.md).
+
+## Use Cases
+
+### Gathering Context
+
+Pull context from conversations before you start working — no tab-switching, no skimming.
+
+> "Read the #incident-api-outage thread in Slack and summarize the root cause, timeline, and action items so I can write the postmortem."
+
+> "Search our Discord #architecture channel for any previous discussion about event sourcing before I write a proposal."
+
+> "Check my unread messages across all Slack channels and tell me if anything needs my attention."
+
+> "Look through #frontend in Slack for messages about the login page redesign from the past two weeks and summarize the decisions made."
+
+> "Search Teams for any messages mentioning 'API deprecation' so I know if this was discussed before."
+
+### Communicating & Reporting
+
+Send updates, file reports, and notify your team — all from a prompt.
+
+> "Post a deployment summary to #releases in Slack with the commit hash, changelog, and deploy status."
+
+> "Send a message to the #standup channel with what I worked on yesterday, what I'm doing today, and any blockers."
+
+> "Cross-post this announcement to #general in Slack, the announcements channel in Discord, and the General channel in Teams."
+
+> "Upload the latest test coverage report to #ci-results in Slack."
+
+> "React with ✅ to the last message in #deploy-requests to confirm I've handled it."
+
+### Automation & Pipelines
+
+Wire messaging into your CI, scripts, or agent workflows.
+
+> "After every CI run, post the build status and test results to #builds in Slack — include the branch name and commit link."
+
+> "When a long-running migration finishes, notify me in Discord with the final row count and elapsed time."
+
+> "Every morning at 9am, snapshot my Slack workspace and post a summary of active channels to #team-pulse."
+
+> "Send an alert to #oncall in Slack whenever the error rate exceeds 1% — include the service name and a link to the dashboard."
+
+> "Read the latest message in #releases, then cross-post it to our Discord announcements channel."
+
+### ...and More
+
+These are just starting points. Your agent has full read/write access to Slack, Discord, Teams, Telegram, WhatsApp, LINE, iMessage, Instagram, KakaoTalk, and Channel Talk — anything you'd do manually in a chat app, it can handle for you. If you build something cool with Agent Messenger, [let me know](https://x.com/devxoul)!
+
+## Philosophy
+
+### Why CLI, not MCP?
+
+MCP servers expose all tools at once, bloating context and confusing agents.
+
+| MCP Approach | Agent Skills + CLI |
+| --- | --- |
+| All tools loaded at once | Load only what you need |
+| Bloated context window | Minimal token usage |
+| Agent confused by options | Focused, relevant tools |
+| Requires a running server | One shell command per action |
+
+With Agent Messenger, your agent loads the skill it needs, uses the CLI, and moves on. No wasted tokens. The SDK complements the CLI for when you need programmatic access—same credentials, same platform coverage, full type safety.
+
+### Why not OAuth?
+
+OAuth requires creating an app and workspace admin approval—days of waiting just to send a message. Agent Messenger skips all of that. Your desktop apps already have valid session tokens; Agent Messenger extracts them directly so you can start messaging immediately. For platforms like Telegram, WhatsApp, and LINE, a one-time authentication flow gets you in fast.
+
+For server-side bots and CI/CD, bot tokens are fully supported via [`agent-slackbot`](skills/agent-slackbot/SKILL.md), [`agent-discordbot`](skills/agent-discordbot/SKILL.md), [`agent-webexbot`](skills/agent-webexbot/SKILL.md), [`agent-telegrambot`](skills/agent-telegrambot/SKILL.md), [`agent-whatsappbot`](skills/agent-whatsappbot/SKILL.md), [`agent-wechatbot`](skills/agent-wechatbot/SKILL.md), and [`agent-channeltalkbot`](skills/agent-channeltalkbot/SKILL.md).
+
+Inspired by [agent-browser](https://github.com/vercel-labs/agent-browser) from Vercel Labs.
+
+## Contributing
+
+```bash
+bun install    # Install dependencies
+bun link       # Link CLI globally for local testing
+bun test       # Run tests
+bun test:e2e   # Run e2e tests
+bun typecheck  # Type check
+bun lint       # Lint
+bun lint:fix   # Lint with autofix
+bun format     # Format
+bun run build  # Build
+```
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=agent-messenger/agent-messenger&type=Date&legend=top-left)](https://www.star-history.com/?repos=agent-messenger%2Fagent-messenger&type=date&legend=top-left)
+
+## Thanks
+
+- [@goden-park](https://github.com/goden-park)
+
+## License
+
+MIT
