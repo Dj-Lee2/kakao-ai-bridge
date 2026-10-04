@@ -43,8 +43,14 @@ export function configFrom(env, cwd = process.cwd()) {
   if (rooms.length > 10 || rooms.some(r => !validId(r)) || new Set(rooms).size !== rooms.length) fail('invalid_KAKAO_ALLOWED_ROOMS');
   const prefix = env.KAKAO_TRIGGER_PREFIX ?? '!ai';
   if (!/^\S{1,32}$/u.test(prefix) || /[\s\x00-\x1f\x7f]/u.test(prefix)) fail('invalid_KAKAO_TRIGGER_PREFIX');
+  // auto: 1:1 rooms answer every text; group rooms answer only what is addressed to the bot.
+  const replyMode = env.KAKAO_REPLY_MODE || 'auto';
+  if (!['auto', 'prefix'].includes(replyMode)) fail('invalid_KAKAO_REPLY_MODE');
+  const rawNames = env.KAKAO_BOT_NAMES || '';
+  const botNames = rawNames === '' ? [] : rawNames.split(',').map(n => n.trim());
+  if (botNames.length > 10 || botNames.some(n => !n || Array.from(n).length > 20 || /[\x00-\x1f\x7f]/u.test(n))) fail('invalid_KAKAO_BOT_NAMES');
   return Object.freeze({
-    provider, endpoint: target, model, key, agentId, gatewayToken, rooms: Object.freeze(rooms), prefix,
+    provider, endpoint: target, model, key, agentId, gatewayToken, rooms: Object.freeze(rooms), prefix, replyMode, botNames: Object.freeze(botNames),
     stateDir: path.resolve(cwd, env.BRIDGE_STATE_DIR || '.state'),
     aiTimeout: integer(env, 'AI_TIMEOUT_MS', 60000, 100, 120000),
     maxTokens: integer(env, 'AI_MAX_OUTPUT_TOKENS', 800, 16, 4096),
@@ -52,6 +58,9 @@ export function configFrom(env, cwd = process.cwd()) {
     maxOutput: integer(env, 'BRIDGE_MAX_OUTPUT_CHARS', 1800, 32, 3000),
     cooldown: integer(env, 'BRIDGE_COOLDOWN_MS', 5000, 1000, 3600000),
     perHour: integer(env, 'BRIDGE_MAX_REQUESTS_PER_HOUR', 30, 1, 120),
+    judgesPerHour: integer(env, 'BRIDGE_MAX_JUDGES_PER_HOUR', 60, 1, 600),
+    followupMs: integer(env, 'BRIDGE_GROUP_FOLLOWUP_MS', 180000, 0, 1800000),
+    contextSize: 8,
     maxQueue: 20, maxAgeMs: 120000
   });
 }
