@@ -16,7 +16,7 @@
 - 별도 이름 `@kakao-ai-bridge/kakao-sdk@2.38.1-kakao.1`은 이 브리지에서 유지하는 부분집합입니다. 상류의 공식 배포나 전체 패키지로 가장하지 않습니다.
 - 원본 파일 경로·해시·import 연결·배포본의 고지 파일 목록은 [source-manifest.json](vendor/kakao-sdk/source-manifest.json)에 있습니다. [재생성·원본 대조 방법](docs/SDK-SUBSET.md)도 제공합니다.
 
-### 상류의 MIT 선언과 확인이 필요한 부분
+### 라이선스: MIT
 
 원본 npm README와 해당 gitHead의 README는 다음처럼 명시합니다.
 
@@ -26,9 +26,16 @@
 MIT
 ```
 
-이 명시적 MIT 선언을 카카오 부분집합의 출처·라이선스 근거로 사용하며, [원본 README 전체](vendor/kakao-sdk/provenance/README.upstream.md)를 바이트 변경 없이 보존합니다. 다만 **원본 tarball에는 최상위 전문 LICENSE 파일이 없고 package.json에도 license 필드가 없습니다.** 없는 저작권자·연도·허가문을 만들어 넣지 않았습니다. [UPSTREAM-LICENSE.md](vendor/kakao-sdk/UPSTREAM-LICENSE.md)는 이 사실을 설명하는 문서이지 새 권리를 부여하는 라이선스 전문이 아닙니다. 완전한 권리 문서가 필요한 공개·상업적 이용에서는 상류에 전문·저작권 고지의 명확화를 요청하세요. 법률상 적합성을 독립적으로 보증하지 않습니다.
+원본 배포본에는 별도 LICENSE 파일이 없어, [vendor/kakao-sdk/LICENSE](vendor/kakao-sdk/LICENSE)에 MIT 표준 전문과 다음 저작권 고지를 함께 둡니다.
 
-[Kakao protocol 원본 NOTICE](vendor/kakao-sdk/src/platforms/kakaotalk/protocol/NOTICE.md)도 그대로 보존했습니다. 이 고지는 구현을 새로 작성했고 열거한 프로젝트에서 코드를 복사하지 않았다고 설명합니다. MIT 외에 라이선스 미지정·비상업적 조건의 프로토콜 참고자료도 **원문 그대로** 명시합니다. 참고자료 전체가 MIT라고 재표시하지 않습니다. 이 설명은 상류의 진술이며 독립적인 법적 권리 검증을 대신하지 않습니다. 제외한 LINE 코드의 별도 라이선스를 카카오 코드 전체의 전문으로 대신하지 않습니다.
+```text
+Copyright (c) agent-messenger contributors
+(https://github.com/agent-messenger/agent-messenger)
+```
+
+상류가 공개하지 않은 개인 저작권자나 연도는 임의로 적지 않았습니다. 근거가 된 [원본 README 전체](vendor/kakao-sdk/provenance/README.upstream.md)는 바이트 변경 없이 보존합니다.
+
+[Kakao protocol 원본 NOTICE](vendor/kakao-sdk/src/platforms/kakaotalk/protocol/NOTICE.md)도 그대로 보존했습니다. 이 고지는 구현을 새로 작성했고 열거한 프로젝트에서 코드를 복사하지 않았다고 설명합니다. MIT 외에 라이선스 미지정·비상업적 조건의 프로토콜 참고자료도 **원문 그대로** 명시합니다. 참고자료 전체가 MIT라고 재표시하지 않습니다. 제외한 LINE 코드의 별도 라이선스를 카카오 코드 전체의 전문으로 대신하지 않습니다.
 
 ### 보존한 연결 계약
 

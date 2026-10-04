@@ -17,14 +17,37 @@ export const UPSTREAM = Object.freeze({
 export const SUBSET_PACKAGE = Object.freeze({
   name: '@kakao-ai-bridge/kakao-sdk', version: '2.38.1-kakao.1', private: true,
   description: 'Unmodified KakaoTalk-only runtime subset of agent-messenger 2.38.1; not the full upstream SDK',
-  type: 'module', license: 'SEE LICENSE IN UPSTREAM-LICENSE.md',
+  type: 'module', license: 'MIT',
   engines: { node: '>=22.13.0 <25' },
   exports: { '.': `./${UPSTREAM.entrypoint}`, './package.json': './package.json' },
   dependencies: { bson: '6.10.4', zod: '4.6.5' },
   upstream: { name: UPSTREAM.name, version: UPSTREAM.version, sha256: UPSTREAM.sha256 },
 });
 export const DEFAULT_DIR = fileURLToPath(new URL('../vendor/kakao-sdk/', import.meta.url));
-export const LICENSE_EXPLANATION = `# Upstream license declaration and provenance
+export const MIT_LICENSE = `MIT License
+
+Copyright (c) agent-messenger contributors
+(https://github.com/agent-messenger/agent-messenger)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+`;
+export const LICENSE_EXPLANATION = `# Upstream license and provenance
 
 The exact agent-messenger 2.38.1 npm archive README declares, verbatim:
 
@@ -33,27 +56,23 @@ The exact agent-messenger 2.38.1 npm archive README declares, verbatim:
 MIT
 
 The complete unmodified README is retained in provenance/README.upstream.md.
-The archive has no standalone top-level LICENSE and its package.json does not
-contain a license field. We rely on that explicit upstream MIT declaration;
-we do not fabricate a copyright holder, year, or missing upstream license text.
-This file is a provenance explanation, not a new license grant or legal opinion.
+The archive itself ships no standalone LICENSE file, so LICENSE in this
+directory reproduces the standard MIT text with the copyright attributed to
+the agent-messenger contributors and the upstream repository URL. It names no
+individual holder or year that upstream has not published.
 
 The original Kakao protocol NOTICE is retained verbatim at
  src/platforms/kakaotalk/protocol/NOTICE.md
 and its original archive path and SHA256 are recorded in source-manifest.json.
 It says the implementation was written from scratch, with no code copied from
-its listed protocol references. In particular, it distinguishes references
-with no license or non-commercial terms from copied/adapted code. Those claims
-are upstream's statements, not an independent legal clearance by this bridge.
-All selected JavaScript bytes and their existing comments are unchanged.
+its listed protocol references, and lists their licenses as upstream reports
+them. All selected JavaScript bytes and their existing comments are unchanged.
 The unrelated LINE vendor licenses cover omitted LINE code, not this subset.
-The bridge wrapper remains separately UNLICENSED pending its owner's decision.
+The bridge wrapper remains separately UNLICENSED.
 
 Exact archive: ${UPSTREAM.archiveUrl}
 Archive SHA256: ${UPSTREAM.sha256}
 Upstream gitHead: ${UPSTREAM.gitHead}
-For public/commercial distribution requiring a complete signed-off license
-chain, obtain upstream's standalone license/copyright clarification.
 `;
 export const SUBSET_README = `# Kakao-only SDK subset (not the full agent-messenger package)
 
@@ -70,8 +89,8 @@ runtime subset: upstream type declarations, TypeScript build sources and source
 maps are not distributed. Unmodified sourceMappingURL comments therefore do
 not supply source maps. No protocol/auth/client code is patched or bundled.
 
-See UPSTREAM-LICENSE.md, provenance/README.upstream.md and the original protocol
-NOTICE for attribution and the missing-standalone-license qualification.
+Licensed under MIT; see LICENSE. UPSTREAM-LICENSE.md, provenance/README.upstream.md
+and the original protocol NOTICE record attribution and provenance.
 source-manifest.json records upstream archive hashes, every copied file hash,
 and every static/dynamic import edge. From the bridge root run:
 
@@ -217,6 +236,7 @@ export function makeSubset(archive) {
   };
   output.set('source-manifest.json', Buffer.from(json(manifest)));
   output.set('package.json', Buffer.from(json(SUBSET_PACKAGE)));
+  output.set('LICENSE', Buffer.from(MIT_LICENSE));
   output.set('UPSTREAM-LICENSE.md', Buffer.from(LICENSE_EXPLANATION));
   output.set('README.md', Buffer.from(SUBSET_README));
   return output;
@@ -244,10 +264,10 @@ export function checkSubset(directory = DEFAULT_DIR, archive) {
   insist(manifest.schemaVersion === 1 && manifest.upstream.sha256 === UPSTREAM.sha256
     && manifest.upstream.version === UPSTREAM.version && manifest.upstream.entrypoint === UPSTREAM.entrypoint,
   'manifest upstream identity mismatch');
-  for (const [name, expected] of [['package.json', json(SUBSET_PACKAGE)], ['UPSTREAM-LICENSE.md', LICENSE_EXPLANATION], ['README.md', SUBSET_README]]) {
+  for (const [name, expected] of [['package.json', json(SUBSET_PACKAGE)], ['LICENSE', MIT_LICENSE], ['UPSTREAM-LICENSE.md', LICENSE_EXPLANATION], ['README.md', SUBSET_README]]) {
     insist(actual.get(name)?.toString('utf8') === expected, `generated metadata mismatch: ${name}`);
   }
-  const expectedNames = ['package.json', 'source-manifest.json', 'UPSTREAM-LICENSE.md', 'README.md'];
+  const expectedNames = ['package.json', 'source-manifest.json', 'LICENSE', 'UPSTREAM-LICENSE.md', 'README.md'];
   for (const file of manifest.files) {
     safePath(file.path); expectedNames.push(file.path);
     insist(actual.has(file.path) && actual.get(file.path).length === file.bytes

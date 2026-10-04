@@ -4,7 +4,7 @@
   "private": true,
   "description": "Unmodified KakaoTalk-only runtime subset of agent-messenger 2.38.1; not the full upstream SDK",
   "type": "module",
-  "license": "SEE LICENSE IN UPSTREAM-LICENSE.md",
+  "license": "MIT",
   "engines": {
     "node": ">=22.13.0 <25"
   },

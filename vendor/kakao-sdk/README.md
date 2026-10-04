@@ -13,8 +13,8 @@ runtime subset: upstream type declarations, TypeScript build sources and source
 maps are not distributed. Unmodified sourceMappingURL comments therefore do
 not supply source maps. No protocol/auth/client code is patched or bundled.
 
-See UPSTREAM-LICENSE.md, provenance/README.upstream.md and the original protocol
-NOTICE for attribution and the missing-standalone-license qualification.
+Licensed under MIT; see LICENSE. UPSTREAM-LICENSE.md, provenance/README.upstream.md
+and the original protocol NOTICE record attribution and provenance.
 source-manifest.json records upstream archive hashes, every copied file hash,
 and every static/dynamic import edge. From the bridge root run:
 

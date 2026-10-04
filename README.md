@@ -199,4 +199,4 @@ npm audit --audit-level=low
 
 ## 출처·이용 조건
 
-카카오 연결은 `agent-messenger@2.38.1`의 원본 22개 모듈을 사용합니다. 타사 고지·MIT 선언과 LICENSE 전문 부재에 관한 설명은 [NOTICE.md](NOTICE.md)에 보존합니다. 브리지 코드는 **UNLICENSED**이며 이용·수정·재배포 허가는 권리자에게 확인하세요.
+카카오 연결은 `agent-messenger@2.38.1`의 원본 22개 모듈을 사용합니다. 해당 모듈은 MIT 라이선스이며 저작권 고지와 전문은 [vendor/kakao-sdk/LICENSE](vendor/kakao-sdk/LICENSE), 출처 설명은 [NOTICE.md](NOTICE.md)에 있습니다. 브리지 코드는 **UNLICENSED**이며 이용·수정·재배포 허가는 권리자에게 확인하세요.

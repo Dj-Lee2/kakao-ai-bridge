@@ -21,7 +21,7 @@ function modules(source, extras = {}) {
 
 test('subset source manifest preserves the pinned archive, license qualification and complete dynamic closure', () => {
   const result = checkSubset();
-  assert.equal(result.runtimeModules, 22); assert.equal(result.files, 28);
+  assert.equal(result.runtimeModules, 22); assert.equal(result.files, 29);
   const manifest = JSON.parse(fs.readFileSync(path.join(DEFAULT_DIR, 'source-manifest.json')));
   assert.equal(manifest.upstream.sha256, 'e72b7af4ad4a61c6263c9814438019ae043a1a339520addfddfa9591b5e4e22a');
   assert.equal(manifest.license.declared, 'MIT');
@@ -35,6 +35,10 @@ test('subset source manifest preserves the pinned archive, license qualification
   const notice = fs.readFileSync(path.join(DEFAULT_DIR, 'src/platforms/kakaotalk/protocol/NOTICE.md'), 'utf8');
   assert.match(notice, /No code was\ncopied/);
   assert.match(notice, /KakaoForge Non-Commercial \/ No Abuse License/);
+  const license = fs.readFileSync(path.join(DEFAULT_DIR, 'LICENSE'), 'utf8');
+  assert.match(license, /^MIT License\n\nCopyright \(c\) agent-messenger contributors\n\(https:\/\/github\.com\/agent-messenger\/agent-messenger\)/);
+  assert.match(license, /The above copyright notice and this permission notice shall be included in all\ncopies/);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(DEFAULT_DIR, 'package.json'))).license, 'MIT');
 });
 
 test('AST graph includes multiline imports, side-effect imports, reexports and literal dynamic imports', () => {
@@ -83,6 +87,15 @@ test('manifest and metadata tampering cannot silently change the declared licens
     fs.writeFileSync(filenameFull, `${JSON.stringify(value, null, 2)}\n`);
     assert.throws(() => checkSubset(dir), /manifest|metadata/);
   }
+});
+
+test('MIT license notice cannot be removed or altered', t => {
+  const altered = fixture(t);
+  fs.writeFileSync(path.join(altered, 'LICENSE'), 'All rights reserved\n');
+  assert.throws(() => checkSubset(altered), /metadata mismatch: LICENSE/);
+  const removed = fixture(t);
+  fs.rmSync(path.join(removed, 'LICENSE'));
+  assert.throws(() => checkSubset(removed), /metadata mismatch: LICENSE/);
 });
 
 test('lock and physical install contain only the Kakao subset, bson, zod and development parser', () => {

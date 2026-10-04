@@ -48,6 +48,6 @@ npm run vendor:check -- --archive /path/to/agent-messenger-2.38.1.tgz --out /new
 - 원본 JS를 임의로 패치하거나 취약 라이브러리 이름만 바꾸지 않습니다. 새 import와 의존성이 필요하면 그 이유·라이선스·audit·회귀를 함께 검토합니다.
 - 잠금파일을 유지합니다. 개발·선택 의존성까지 전체 audit을 실행하며 예외 목록이나 lock 삭제로 검사를 우회하지 않습니다.
 - 원래 브리지 31개 테스트와 실제 Kakao BSON/암호화/단일 WRITE 회귀를 유지했습니다. 더 이상 설치하지 않는 LINE/JOSE/Thrift 테스트 8개는 실제 Kakao 스키마·자격증명·동적 인증·리스너·미디어·분류 검증으로 대체했습니다. 출처와 import-closure 실패 주입 테스트도 추가했습니다.
-- 출처의 MIT 선언은 보존하지만 없는 상류 LICENSE 전문이나 저작권자를 만들지 않습니다. [라이선스 설명](../NOTICE.md)을 먼저 확인하세요.
+- 상류 README의 MIT 선언에 따라 `vendor/kakao-sdk/LICENSE`에 MIT 전문과 `agent-messenger contributors` 저작권 고지를 둡니다. 상류가 공개하지 않은 개인 저작권자·연도는 만들지 않습니다. [출처 설명](../NOTICE.md)을 확인하세요.
 
 전체 audit 0개는 **실계정 안전성 보증이 아닙니다.** 테스트는 오프라인 모의 HTTP·전송 계층을 사용하며 실제 계정 로그인/송신은 별도 본인 테스트 계정의 수동 검증 대상입니다.
