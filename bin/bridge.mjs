@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { loadConfig, requireRunnable } from '../src/config.mjs';
 import { StateStore, checkPrivateFile } from '../src/store.mjs';
 import { loadSdk, assertSdkPackage } from '../src/sdk.mjs';
-import { login, connectClient, validateSession } from '../src/auth.mjs';
+import { login, connectClient, validateSession, refreshSession } from '../src/auth.mjs';
 import { hiddenPrompt, displayPasscode, requireTty } from '../src/prompt.mjs';
 import { Bridge } from '../src/bridge.mjs';
 import { listRooms } from '../src/rooms.mjs';
@@ -13,11 +13,11 @@ import { deadline, fail, safeCode } from '../src/errors.mjs';
 process.umask(0o077);
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const command=process.argv[2] || 'help';
-const HELP='사용법: npm run setup | login | rooms | doctor | start\nsetup/doctor는 카카오/AI에 접속하지 않습니다. login/rooms/start는 본인 계정에만 사용하세요.\n';
+const HELP='사용법: npm run setup | login | refresh | rooms | doctor | start\nsetup/doctor는 카카오/AI에 접속하지 않습니다. login/refresh/rooms/start는 본인 계정에만 사용하세요.\n';
 async function main(){
   if(process.argv.length>3)fail('unexpected_arguments');
   if(['help','--help','-h'].includes(command)){process.stdout.write(HELP);return 0;}
-  if(!['setup','login','rooms','doctor','start'].includes(command))fail('unknown_command');
+  if(!['setup','login','refresh','rooms','doctor','start'].includes(command))fail('unknown_command');
   const [major,minor]=process.versions.node.split('.').map(Number);
   if(major<22 || major>24 || (major===22&&minor<13))fail('node_22_13_through_24_required');
   if(process.platform==='win32')fail('native_windows_unsupported_use_wsl');
@@ -57,6 +57,10 @@ async function main(){
       process.stderr.write('비공식 SDK입니다. 본인 전용 계정만 사용하고 다른 기기 세션 충돌 가능성을 확인하세요. 강제 로그인은 지원하지 않습니다.\n');
       await login({sdk,store,prompt:hiddenPrompt,displayPasscode});
       process.stdout.write('로그인 세션을 전용 비공개 디렉터리에 저장했습니다. 비밀번호는 저장하지 않았습니다.\n');return 0;
+    }
+    if(command==='refresh'){
+      const next=await refreshSession(sdk,store,validateSession(store.read('session.json')));
+      process.stdout.write(JSON.stringify({ok:true,userId:next.userId,oauthTokenLength:next.oauthToken.length,refreshedAt:next.refreshedAt})+'\n');return 0;
     }
     if(command==='rooms'){
       const consent=await hiddenPrompt('본인 계정에 연결하여 방 ID/이름 목록을 조회합니다. 계속하려면 yes: ');

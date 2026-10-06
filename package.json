@@ -11,6 +11,7 @@
   "scripts": {
     "setup": "node bin/bridge.mjs setup",
     "login": "node bin/bridge.mjs login",
+    "refresh": "node bin/bridge.mjs refresh",
     "rooms": "node bin/bridge.mjs rooms",
     "start": "node bin/bridge.mjs start",
     "doctor": "node bin/bridge.mjs doctor",

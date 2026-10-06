@@ -190,6 +190,39 @@ npm start
 
 종료는 `Ctrl+C`입니다. 검색·일정·자동 공지·장기 기억은 브리지 자체 기능이 아닙니다.
 
+### 5. 토큰 갱신과 상시 운영
+
+카카오 접속 토큰(access token)은 만료됩니다(서버에 따라 24시간까지 짧을 수 있음). 브리지는 이를 두 가지로 처리합니다.
+
+- **자동(연결 시)**: `start`가 연결하거나 재연결할 때 저장된 토큰으로 인증이 실패하면, 저장된 refresh token으로 **한 번** 토큰을 갱신하고 다시 시도합니다. 성공하면 새 토큰을 `session.json`에 안전하게(0600) 저장합니다. 계정 불일치(다른 계정)는 갱신으로 해결되지 않으므로 갱신하지 않습니다.
+- **수동**: 브리지를 멈춘 상태에서 아래로 토큰만 미리 갱신할 수 있습니다. 실행 중에는 상태가 잠겨 있어 수동 갱신이 거부됩니다(실행 중 브리지가 알아서 갱신합니다). 토큰 값은 출력하지 않습니다.
+
+```sh
+npm run refresh
+```
+
+**24시간 상시 운영**은 실패 시 자동 재시작하는 감독 프로세스로 실행하세요. 연결이 끊기면(토큰 만료 포함) 프로세스는 0이 아닌 코드로 종료하고, 재시작 시 저장된 refresh token으로 다시 인증합니다. `Ctrl+C`/`SIGTERM`으로 정상 종료하면 0으로 끝나 재시작하지 않습니다. systemd 예시(`Restart=on-failure`):
+
+```ini
+[Unit]
+Description=Kakao AI bridge
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/kakao-ai-bridge
+ExecStart=/usr/bin/npm start
+Restart=on-failure
+RestartSec=20
+User=kakao-bridge
+
+[Install]
+WantedBy=multi-user.target
+```
+
+토큰 만료가 하루 단위로 짧을 수 있으므로, 장기 연결만 믿지 말고 위처럼 재시작·갱신 경로를 반드시 갖추세요.
+
 ## 운영·개발 참고
 
 - 카카오 공식 봇 API 제품이 아닙니다. 계정 제한·기기 세션 충돌·비공식 프로토콜 변경 위험은 [SECURITY.md](SECURITY.md)를 확인하세요.

@@ -1,5 +1,5 @@
 import { validId } from './config.mjs';
-import { fail, deadline } from './errors.mjs';
+import { fail, deadline, safeCode } from './errors.mjs';
 export function validateSession(s) {
   if (s?.version !== 1 || !validId(s.userId) || BigInt(s.userId)>BigInt(Number.MAX_SAFE_INTEGER) ||
       typeof s.oauthToken!=='string' || !s.oauthToken || s.oauthToken.length>8192 ||
@@ -25,8 +25,7 @@ export async function login({sdk,store,prompt,displayPasscode}) {
     userId:c.user_id,deviceUuid:c.device_uuid,deviceType:c.device_type,createdAt:new Date().toISOString()});
   store.write('session.json',session); return true;
 }
-export async function connectClient(sdk, store) {
-  const s=validateSession(store.read('session.json'));
+async function authenticate(sdk, s) {
   const client=new sdk.KakaoTalkClient();
   try {
     await client.login({oauthToken:s.oauthToken,userId:s.userId,deviceUuid:s.deviceUuid,deviceType:s.deviceType});
@@ -34,4 +33,34 @@ export async function connectClient(sdk, store) {
     if(profile?.user_id!==s.userId)fail('account_mismatch');
     return {client,selfId:s.userId};
   } catch(e){client.close();throw e;}
+}
+// Exchange the stored refresh token for a fresh access token and persist it.
+// Keeps userId/deviceUuid/deviceType; retains the old refresh token if the
+// server does not rotate it. Never logs or returns the token values.
+export async function refreshSession(sdk, store, s) {
+  if(typeof sdk.refreshKakaoOAuthToken!=='function')fail('sdk_refresh_unavailable');
+  if(!s.refreshToken)fail('refresh_token_missing');
+  let result;
+  try {result=await deadline(sdk.refreshKakaoOAuthToken(
+    {accessToken:s.oauthToken,refreshToken:s.refreshToken,deviceUuid:s.deviceUuid},{timeoutMs:15000}),20000);}
+  catch{fail('token_refresh_failed');}
+  if(!result || typeof result.accessToken!=='string' || !result.accessToken)fail('token_refresh_failed');
+  const next=validateSession({version:1,oauthToken:result.accessToken,
+    refreshToken:typeof result.refreshToken==='string'&&result.refreshToken?result.refreshToken:s.refreshToken,
+    userId:s.userId,deviceUuid:s.deviceUuid,deviceType:s.deviceType,
+    createdAt:typeof s.createdAt==='string'?s.createdAt:new Date().toISOString(),refreshedAt:new Date().toISOString()});
+  store.write('session.json',next);return next;
+}
+export async function connectClient(sdk, store) {
+  const s=validateSession(store.read('session.json'));
+  try {
+    return await authenticate(sdk,s);
+  } catch(e){
+    // A wrong-account token is valid and a refresh cannot fix it. Otherwise the
+    // common failure is an expired/stale access token: refresh once and retry.
+    if(safeCode(e)==='account_mismatch')throw e;
+    let next;
+    try{next=await refreshSession(sdk,store,s);}catch{throw e;}
+    return await authenticate(sdk,next);
+  }
 }
