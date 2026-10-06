@@ -35,9 +35,15 @@ async function complete(cfg, messages, signal, maxTokens) {
   } catch(e) { if(e instanceof BridgeError)throw e; fail(signal?.aborted?'stopped':'ai_request_failed'); }
 }
 // context is only supplied for group rooms: recent lines let the answer follow the conversation.
+// The first configured name is the assistant's own name; the rest are accepted ways of calling it.
+export function systemPrompt(names = []) {
+  if (!names.length) return SYSTEM;
+  const calls = names.length > 1 ? ` 사람들이 ${names.join(', ')}라고 불러도 모두 당신을 부르는 말입니다.` : '';
+  return `${SYSTEM} 당신의 이름은 ${names[0]}입니다.${calls}`;
+}
 export async function askAi(cfg, text, signal, context = [], names = []) {
   const user = context.length ? contextBlock(context, text, names) : text;
-  const plain = await complete(cfg, [{role:'system',content:SYSTEM},{role:'user',content:user}], signal, cfg.maxTokens);
+  const plain = await complete(cfg, [{role:'system',content:systemPrompt(names)},{role:'user',content:user}], signal, cfg.maxTokens);
   const chars=Array.from(plain);return chars.length>cfg.maxOutput?chars.slice(0,cfg.maxOutput-1).join('')+'…':plain;
 }
 export async function askJudge(cfg, text, signal, context = [], names = []) {

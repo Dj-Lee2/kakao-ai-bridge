@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import { configFrom } from '../src/config.mjs';
-import { askJudge, askAi, JUDGE } from '../src/ai.mjs';
+import { askJudge, askAi, JUDGE, SYSTEM, systemPrompt } from '../src/ai.mjs';
 
 async function server(t, reply) {
   const seen = [];
@@ -36,4 +36,13 @@ test('reply mode and bot names are validated', () => {
   assert.deepEqual(configFrom({...base, KAKAO_BOT_NAMES:'코덱스, 봇'}).botNames, ['코덱스', '봇']);
   for (const env of [{KAKAO_REPLY_MODE:'always'}, {KAKAO_BOT_NAMES:'a,,b'}, {KAKAO_BOT_NAMES:'x'.repeat(21)}, {BRIDGE_MAX_JUDGES_PER_HOUR:'0'}])
     assert.throws(() => configFrom({...base, ...env}), /invalid_/, JSON.stringify(env));
+});
+
+test('configured names become the assistant name and accepted call forms', async t => {
+  const {seen, cfg} = await server(t, () => '답변');
+  assert.equal(systemPrompt([]), SYSTEM);
+  assert.equal(systemPrompt(['이삭이', '이삭', '이삭아']), `${SYSTEM} 당신의 이름은 이삭이입니다. 사람들이 이삭이, 이삭, 이삭아라고 불러도 모두 당신을 부르는 말입니다.`);
+  await askAi(cfg, '이름이 뭐야?', undefined, [], ['이삭이']);
+  assert.equal(seen[0].messages[0].content, `${SYSTEM} 당신의 이름은 이삭이입니다.`);
+  assert.equal(seen[0].messages[1].content, '이름이 뭐야?');
 });

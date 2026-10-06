@@ -137,7 +137,7 @@ export class Bridge {
         r.count++;this.store.write('ledger.json',this.ledger);
       }
       let text;
-      try{text=await this.ai(this.cfg,item.text,this.abort.signal,item.context,item.group?this.names:[]);}
+      try{text=await this.ai(this.cfg,item.text,this.abort.signal,item.context,this.names);}
       catch(error){if(this.closed)break;this.onEvent(safeCode(error));continue;}
       this.assertOpen();await this.verifyRoom(item.room);this.assertOpen();
       if(!this.memberIds.get(item.room)?.has(item.author))fail('author_not_member');
